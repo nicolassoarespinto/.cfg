@@ -111,6 +111,6 @@ nmap <F8> ^v$<c-c><c-c><ESC>j
 nmap <F6> :tabp<CR>
 nmap <F7> :tabn<CR>
 nmap <leader>n :tabn<CR>
-nmap <leader>p :tabn<CR>
+nmap <leader>p :tabp<CR>
 
 
