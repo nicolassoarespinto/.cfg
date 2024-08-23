@@ -13,5 +13,6 @@ Plug('BurntSushi/ripgrep')
 Plug('nvim-treesitter/nvim-treesitter')
 Plug('theprimeagen/harpoon')
 Plug('mbbill/undotree')
+Plug('tpope/vim-fugitive')
 vim.call('plug#end')
 
