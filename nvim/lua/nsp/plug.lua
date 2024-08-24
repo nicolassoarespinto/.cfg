@@ -14,5 +14,28 @@ Plug('nvim-treesitter/nvim-treesitter')
 Plug('theprimeagen/harpoon')
 Plug('mbbill/undotree')
 Plug('tpope/vim-fugitive')
+Plug('jpalardy/vim-slime')
+
+Plug('sudormrfbin/cheatsheet.nvim')
+Plug('ThePrimeagen/vim-be-good')
+
+-- LSP --
+
+Plug('neovim/nvim-lspconfig')
+Plug('williamboman/mason.nvim')
+Plug('williamboman/mason-lspconfig.nvim')
+
+-- Autocompletion
+Plug('hrsh7th/nvim-cmp')
+Plug('hrsh7th/cmp-buffer')
+Plug('hrsh7th/cmp-path')
+Plug('hrsh7th/cmp-cmdline')
+Plug('hrsh7th/cmp-nvim-lsp')
+Plug('hrsh7th/cmp-nvim-lua')
+
+-- Snippets
+Plug('saadparwaiz1/cmp_luasnip')
+
+
 vim.call('plug#end')
 
