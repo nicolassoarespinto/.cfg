@@ -1,4 +1,5 @@
-require("nsp.plug")
-require("nsp.style")
+--require("nsp.plug")
 require("nsp.set")
 require("nsp.remap")
+require("nsp.lazy_init")
+require("nsp.style")
