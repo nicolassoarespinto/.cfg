@@ -3,7 +3,9 @@ require('mason').setup({})
 require('mason-lspconfig').setup({
     handlers = {
         function(server_name)
-            require('lspconfig')[server_name].setup({})
+            require('lspconfig')[server_name].setup({
+                globals = {"vim"},
+            })
         end,
     }
 })
