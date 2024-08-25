@@ -21,8 +21,8 @@ Plug('ThePrimeagen/vim-be-good')
 
 -- LSP --
 
-Plug('neovim/nvim-lspconfig')
 Plug('williamboman/mason.nvim')
+Plug('neovim/nvim-lspconfig')
 Plug('williamboman/mason-lspconfig.nvim')
 
 -- Autocompletion
