@@ -10,7 +10,8 @@ return {
     "jpalardy/vim-slime",
     "sudormrfbin/cheatsheet.nvim",
     "ThePrimeagen/vim-be-good",
-    "github/copilot.vim"
+    "terrortylor/nvim-comment"
+
 }
 
 

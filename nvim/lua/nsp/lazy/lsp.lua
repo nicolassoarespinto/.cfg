@@ -3,6 +3,8 @@ return {
     dependencies = {
         "williamboman/mason.nvim",
         "williamboman/mason-lspconfig.nvim",
+        "jay-babu/mason-null-ls.nvim",
+        "nvimtools/none-ls.nvim",
         "hrsh7th/cmp-nvim-lsp",
         "hrsh7th/cmp-buffer",
         "hrsh7th/cmp-path",
@@ -15,21 +17,11 @@ return {
     config = function()
 
         require('mason').setup({})
-
-        require('mason-lspconfig').setup({
-            handlers = {
-                function(server_name)
-                    require('lspconfig')[server_name].setup({
-                        globals = {"vim"},
-                    })
-                end,
-            }
-        })
-
-
-        local lsp_attach = function(client, bufnr)
+          local lsp_attach = function(client, bufnr)
           local opts = {buffer = bufnr}
 
+          -- Debug print
+          vim.api.nvim_echo({{client.name .. ' is ready'}}, true, {})
           vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition() end', opts)
           vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover() end', opts)
           vim.keymap.set('n', '<leader>vws', '<cmd>lua vim.lsp.buf.workspace_symbol() end', opts)
@@ -46,6 +38,18 @@ return {
 
         end
 
+        local lsp_capabilities = vim.lsp.protocol.make_client_capabilities()
+        local default_setup = function(server_name)
+            require('lspconfig')[server_name].setup({
+                capabilities = lsp_capabilities,
+            })
+        end
+        
+        require('mason-lspconfig').setup({
+            handlers = {default_setup},
+        })
+
+
 
         local cmp = require('cmp')
 
@@ -61,6 +65,18 @@ return {
           },
           mapping = cmp.mapping.preset.insert({}),
         })
+
+        require('mason-null-ls').setup({
+        ensure_installed = {"black"}
+        })
+        local null_ls = require("null-ls")
+        null_ls.setup({
+        sources = {
+            null_ls.builtins.formatting.black,
+            },
+        })
+
+
 
     end
 }
