@@ -6,7 +6,8 @@ return {
         "nvim-telescope/telescope-file-browser.nvim",
     },
     config = function ()
-        require('telescope').setup{}
+        require('telescope').setup{
+        }
         -- extensions ={
         --         file_browser = {
         --     theme = "ivy",
@@ -17,7 +18,7 @@ return {
         require('telescope').load_extension('file_browser')
 
         local builtin = require('telescope.builtin')
-        vim.keymap.set('n', '<leader>ff', function() builtin.find_files({ follow = true }) end, {})
+        vim.keymap.set('n', '<leader>ff', function() builtin.find_files({ follow = false, path_display, path_display= {"absolute"} }) end, {})
         vim.keymap.set('n', '<C-p>', builtin.find_files, {})
         vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
         vim.keymap.set('n', '<leader>fb', builtin.buffers, {})

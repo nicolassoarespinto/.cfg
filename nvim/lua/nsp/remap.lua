@@ -84,11 +84,13 @@ function TogglePasteCopyMode()
         vim.o.paste = false
         vim.wo.relativenumber = true
         vim.wo.number = true
+        vim.o.mouse = 'a'
         vim.api.nvim_echo({{'Paste mode disabled', 'Normal'}}, true, {})
     else
         vim.o.paste = true
         vim.wo.relativenumber = false
         vim.wo.number = false
+        vim.o.mouse = ''
         vim.api.nvim_echo({{'Paste mode enabled', 'Normal'}}, true, {})
     end
 end

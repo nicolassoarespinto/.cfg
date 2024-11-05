@@ -31,7 +31,7 @@ filetype plugin on
 filetype indent on
 
 " Map leader
-let mapleader=","
+let mapleader="\\"
 set nobackup
 
 set nowrap
@@ -101,16 +101,25 @@ set ruler
 "  => Mappings
 "
 """"""""""""""""""""""""""""""""""""""""""""""""""
-
+let g:slime_cell_delimiter = "# %%"
 " Send current paragraph and move down
-nmap <F9> <c-c><c-c>}
-" Send current line and move down
+" nmap <F9> <c-c><c-c>}
+" Send current cell and move down to the next cell
+" nmap <F9> <Plug>SlimeSendCell/\%V# %%<CR>
+nmap <F9> <Plug>SlimeSendCell 
+
+
 nmap <F8> ^v$<c-c><c-c><ESC>j
+" FIr visual mode, send current selection, send new line and move down
+vmap <F8> <c-c><c-c>gv<ESC>
+
+
 
 " Circle between tabs
 nmap <F6> :tabp<CR>
 nmap <F7> :tabn<CR>
+nmap <leader>k :tabn<CR>
+nmap <leader>j :tabp<CR>
 nmap <leader>n :tabn<CR>
 nmap <leader>p :tabp<CR>
-
-
+nnoremap <F2> :NERDTreeToggle<CR>
