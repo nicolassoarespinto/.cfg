@@ -3,6 +3,7 @@ vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 
 
+
 -- LSP 
 --
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
@@ -47,7 +48,24 @@ vim.keymap.set("n", "<leader>pd", LeaveBuffer)
 -- vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 -- vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
--- <C-D> and <C-U> to scroll half a page, but keep the cursor in center
+-- Navigation
+-- Remove <C-l> from netrw keymap
+-- vim.keymap.set('n', '<C-l>', '<nop>', { buffer = true })
+vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+
+-- Resize windows
+vim.keymap.set('n', '<M-.>', '<c-w>5<', { desc = 'Resize window to the left' })
+vim.keymap.set('n', '<M-,>', '<c-w>5>', { desc = 'Resize window to the right' })
+vim.keymap.set('n', '<M-t>', '<C-W>+', { desc = 'Resize window to the top' })
+vim.keymap.set('n', '<M-s>', '<C-W>-', { desc = 'Resize window to the bottom' })
+
+vim.keymap.set('n', '<M-q>', '<C-w>q', { desc = 'Close window' })
+
+
+-- <C-D> and <C-U> to scroll hal a page, but keep the cursor in center
 vim.keymap.set('n', '<C-d>', '<C-d>zz')
 vim.keymap.set('n', '<C-u>', '<C-u>zz')
 
@@ -58,7 +76,6 @@ vim.keymap.set('n', 'N', 'Nzz')
 -- Paragraphs
 vim.api.nvim_set_keymap('n', 'ç', '}', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', 'Ç', '{', { noremap = true, silent = true })  
-
 
 
 -- Vim slime
@@ -97,3 +114,12 @@ end
 
 vim.keymap.set('n', '<leader>pp', TogglePasteCopyMode, { desc = 'Toggle paste mode' }, {noremap = true, silent = true})
 vim.keymap.set('i', '<F12>', TogglePasteCopyMode, { desc = 'Toggle paste mode' }, {noremap = true, silent = true})
+
+--- Terminals ---
+vim.keymap.set("t", "<esc><esc>", "<C-\\><C-n>")
+vim.keymap.set("n", "<leader>tt", function()
+    vim.cmd.vsplit()
+    vim.cmd.terminal()
+end, { desc = "Open terminal in a vertical split" })
+
+
