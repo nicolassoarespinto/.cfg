@@ -30,5 +30,6 @@ local function switch_to_terminal()
 end
 
 vim.keymap.set("n", "<leader>tn", open_terminal)
-vim.keymap.set("n", "<leader>tt", switch_to_terminal)
+vim.keymap.set("n", "<leader>tl", switch_to_terminal)
+
 

@@ -25,11 +25,6 @@ vim.keymap.set('n', '<leader>xd', Toggle_diagnostics, { noremap = true, silent =
 
 vim.keymap.set('n', '<leader>bf', ':lua vim.lsp.buf.format()<CR>', { desc = 'Format buffer' })
 
--- Terminal --
--- Open terminal in vertical split
-vim.keymap.set('n', '<leader>tt', ':vsplit term://bash<CR>', { desc = 'Open terminal' }) 
-vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', { desc = 'Exit terminal' }) 
-
 -- Navigation --
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
 -- delete current buffer and open explorer, without closing the window
