@@ -43,11 +43,6 @@ vim.keymap.set("n", "<leader>pd", LeaveBuffer)
 
 
 
--- vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
--- vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
--- vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
--- vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
-
 -- Navigation
 -- Remove <C-l> from netrw keymap
 -- vim.keymap.set('n', '<C-l>', '<nop>', { buffer = true })
@@ -63,6 +58,15 @@ vim.keymap.set('n', '<M-t>', '<C-W>+', { desc = 'Resize window to the top' })
 vim.keymap.set('n', '<M-s>', '<C-W>-', { desc = 'Resize window to the bottom' })
 
 vim.keymap.set('n', '<M-q>', '<C-w>q', { desc = 'Close window' })
+
+
+-- Tabs
+-- Go to next tab
+vim.keymap.set('n', '<M-K>', ':tabnext<CR>', { desc = 'Go to next tab' })
+vim.keymap.set('n', '<M-J>', ':tabprevious<CR>', { desc = 'Go to previous tab' })
+vim.keymap.set('n', '<M-N>', ':tabnew<CR>', { desc = 'Open new tab' })
+vim.keymap.set('n', '<M-W>', ':tabclose<CR>', { desc = 'Close tab' })
+vim.keymap.set('n', 'gt', ':tabnext<CR>', { desc = 'Go to next tab' })
 
 
 -- <C-D> and <C-U> to scroll hal a page, but keep the cursor in center
@@ -115,11 +119,8 @@ end
 vim.keymap.set('n', '<leader>pp', TogglePasteCopyMode, { desc = 'Toggle paste mode' }, {noremap = true, silent = true})
 vim.keymap.set('i', '<F12>', TogglePasteCopyMode, { desc = 'Toggle paste mode' }, {noremap = true, silent = true})
 
---- Terminals ---
-vim.keymap.set("t", "<esc><esc>", "<C-\\><C-n>")
-vim.keymap.set("n", "<leader>tt", function()
-    vim.cmd.vsplit()
-    vim.cmd.terminal()
-end, { desc = "Open terminal in a vertical split" })
 
+-- Move in quickfix list
+vim.keymap.set("n", "<M-j>", "<cmd>cnext<CR>")
+vim.keymap.set("n", "<M-k>", "<cmd>cprev<CR>")
 

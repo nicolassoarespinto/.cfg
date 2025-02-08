@@ -21,7 +21,6 @@ return {
           local opts = {buffer = bufnr}
 
           -- Debug print
-          vim.api.nvim_echo({{client.name .. ' is ready'}}, true, {})
           vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition() end', opts)
           vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover() end', opts)
           vim.keymap.set('n', '<leader>vws', '<cmd>lua vim.lsp.buf.workspace_symbol() end', opts)

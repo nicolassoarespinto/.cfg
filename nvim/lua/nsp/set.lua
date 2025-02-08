@@ -38,5 +38,13 @@ vim.opt.signcolumn = "yes"
 
 
 --- Terminals ---
-vim.keymap.set("t", "<esc><esc>", "<C-\\><C-n>")
-vim.keymap.set("n", "<leader>tt", "<cmd>terminal<CR>")
+--vim.keymap.set("t", "<esc><esc>", "<C-\\><C-n>")
+--vim.keymap.set("n", "<leader>tt", "<cmd>terminal<CR>")
+
+
+-- Slime ---
+vim.g.slime_python_ipython = 1
+
+-- Move in quickfix list
+vim.keymap.set("n", "<C-j>", "<cmd>cnext<CR>")
+vim.keymap.set("n", "<C-k>", "<cmd>cprev<CR>")

@@ -12,8 +12,6 @@ return {
     "ThePrimeagen/vim-be-good",
     "terrortylor/nvim-comment",
     "github/copilot.vim",
-    "tpope/vim-dadbod",
-    "kristijanhusak/vim-dadbod-ui",
 }
 
 
