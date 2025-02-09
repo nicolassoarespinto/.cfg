@@ -26,8 +26,8 @@ local function setup_terminal()
     debug_state("Before setup")
     if not float.is_valid() then
         float.create_floating_window({
-            width = 80,
-            height = 24
+            width = 120,
+            height = 36
         })
     end
 
