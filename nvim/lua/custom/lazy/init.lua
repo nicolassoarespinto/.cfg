@@ -6,6 +6,8 @@ return {
     },
     "junegunn/vim-easy-align",
     "rafi/awesome-vim-colorschemes",
+    "rebelot/kanagawa.nvim",
+    "catppuccin/nvim",
     "BurntSushi/ripgrep",
     "jpalardy/vim-slime",
     "sudormrfbin/cheatsheet.nvim",
