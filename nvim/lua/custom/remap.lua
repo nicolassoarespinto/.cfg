@@ -8,23 +8,6 @@ vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 --
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
-
-vim.g.diagnostics_active = true
-
-function Toggle_diagnostics()
-    if vim.g.diagnostics_active then
-        vim.g.diagnostics_active = false
-        vim.diagnostic.disable()
-   else
-        vim.g.diagnostics_active = true
-        vim.diagnostic.enable()
-    end
-end
-
-vim.keymap.set('n', '<leader>xd', Toggle_diagnostics, { noremap = true, silent = true, desc = "Toggle vim diagnostics" })
-
-vim.keymap.set('n', '<leader>bf', ':lua vim.lsp.buf.format()<CR>', { desc = 'Format buffer' })
-
 -- Navigation --
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
 -- delete current buffer and open explorer, without closing the window
