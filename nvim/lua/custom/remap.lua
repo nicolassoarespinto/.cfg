@@ -102,3 +102,10 @@ vim.keymap.set('i', '<F12>', TogglePasteCopyMode, { desc = 'Toggle paste mode' }
 vim.keymap.set("n", "<M-j>", "<cmd>cnext<CR>")
 vim.keymap.set("n", "<M-k>", "<cmd>cprev<CR>")
 
+
+-- Lua code --
+vim.keymap.set("n", "<leader>x", ":.lua<CR>", { desc = 'Execute lua code' })
+vim.keymap.set("v", "<leader>x", ":lua<CR>", { desc = 'Execute lua code' })
+vim.keymap.set("n", "<leader><leader>x", "<cmd>source %<CR>", { desc = 'Execute current file'}, {noremap = true, silent = true})
+
+
