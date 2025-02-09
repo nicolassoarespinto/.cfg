@@ -1,8 +1,7 @@
---require("nsp.plug")
-require("nsp.set")
-require("nsp.remap")
-require("nsp.lazy_init")
-require("nsp.style")
+require("custom.set")
+require("custom.remap")
+require("custom.lazy_init")
+require("custom.style")
 
 
 
@@ -12,7 +11,6 @@ local autocmd = vim.api.nvim_create_autocmd
 autocmd('LspAttach', {
     callback = function(e)
          local opts = { buffer = e.buf }
-         vim.api.nvim_echo({{  'lsp is ready'}}, true, {})
           vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', opts)
           vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
           vim.keymap.set('n', '<leader>vws', '<cmd>lua vim.lsp.buf.workspace_symbol()<CR>', opts)
