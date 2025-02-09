@@ -14,6 +14,7 @@ return {
     "ThePrimeagen/vim-be-good",
     "terrortylor/nvim-comment",
     "github/copilot.vim",
+    "numToStr/Comment.nvim"
 }
 
 
