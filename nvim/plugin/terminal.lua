@@ -31,5 +31,5 @@ end
 
 vim.keymap.set("n", "<leader>tn", open_terminal)
 vim.keymap.set("n", "<leader>tl", switch_to_terminal)
-
+vim.keymap.set("t", "<esc><esc>", "<c-\\><c-n>")
 
