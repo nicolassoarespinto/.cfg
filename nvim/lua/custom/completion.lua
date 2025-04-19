@@ -1,4 +1,3 @@
-require "custom.snippets"
 
 vim.opt.completeopt = { "menu", "menuone", "noselect" }
 vim.opt.shortmess:append "c"
@@ -24,6 +23,11 @@ local kind_formatter = lspkind.cmp_format {
     tn = "[TabNine]",
     eruby = "[erb]",
   },
+}
+
+-- Add tailwindcss-colorizer-cmp as a formatting source
+require("tailwindcss-colorizer-cmp").setup {
+  color_square_width = 2,
 }
 
 local cmp = require "cmp"
@@ -66,6 +70,9 @@ cmp.setup {
     format = function(entry, vim_item)
       -- Lspkind setup for icons
       vim_item = kind_formatter(entry, vim_item)
+
+      -- Tailwind colorizer setup
+      vim_item = require("tailwindcss-colorizer-cmp").formatter(entry, vim_item)
 
       return vim_item
     end,

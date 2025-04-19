@@ -101,6 +101,19 @@ vim.keymap.set('i', '<F12>', TogglePasteCopyMode, { desc = 'Toggle paste mode' }
 -- Move in quickfix list
 vim.keymap.set("n", "<M-j>", "<cmd>cnext<CR>")
 vim.keymap.set("n", "<M-k>", "<cmd>cprev<CR>")
+-- Clear quickfix list
+function ClearQuickfix()
+    -- Ask for confirmation
+    local confirm = vim.fn.input("Clear quickfix list? [y/n]: ")
+    if confirm ~= "y" then
+        return
+    end
+    vim.fn.setqflist({})
+    print("Quickfix list cleared")
+end
+
+-- Set command
+vim.keymap.set("n", "<leader>qf", ClearQuickfix, { desc = 'Clear quickfix list' })
 
 
 -- Lua code --

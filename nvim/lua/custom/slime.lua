@@ -39,6 +39,16 @@ function M.toggle_target()
     end
 end
 
+function M.toggle_ipython()
+    if vim.g.slime_python_ipython == 1 then
+        vim.g.slime_python_ipython = 0
+        vim.notify("Slime python target set to python", vim.log.levels.INFO)
+    else
+        vim.g.slime_python_ipython = 1
+        vim.notify("Slime python target set to ipython", vim.log.levels.INFO)
+    end
+end
+
 -- Setup function to initialize keymaps and default configuration
 function M.setup(opts)
     opts = opts or {}
@@ -56,6 +66,7 @@ function M.setup(opts)
         toggle_target = opts.toggle_key or '<leader>ct',
         mark_terminal = opts.mark_key or '<leader>cm',
         set_terminal = opts.set_key or '<leader>cs',
+        toggle_ipython = opts.toggle_ipython or '<leader>sp',
     }
 
     -- Define keymaps
@@ -70,6 +81,10 @@ function M.setup(opts)
             end
         end
     end, { desc = '[m]ark terminal' })
+
+    vim.keymap.set('n', keymaps.toggle_ipython, M.toggle_ipython,
+        { desc = '[s]witch python target (ipython/python)' })
+
 end
 
 return M
