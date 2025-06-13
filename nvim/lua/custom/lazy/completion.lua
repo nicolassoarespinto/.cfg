@@ -15,13 +15,14 @@ return {
       "zbirenbaum/copilot-cmp",
     },
     config = function()
-      require("copilot").setup {
-        suggestion = { enabled = false },
-        panel = { enabled = false },
-      }
-
-      require("copilot_cmp").setup()
-
+      -- require("copilot").setup {
+      --   suggestion = { enabled = false },
+      --   panel = { enabled = false },
+      --   auth_provider_url = nil,
+      -- }
+      --
+      -- require("copilot_cmp").setup()
+      --
       require "custom.completion"
     end,
   },

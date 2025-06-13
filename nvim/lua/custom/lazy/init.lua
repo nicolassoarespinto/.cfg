@@ -13,7 +13,6 @@ return {
     "sudormrfbin/cheatsheet.nvim",
     "ThePrimeagen/vim-be-good",
     "terrortylor/nvim-comment",
-    "github/copilot.vim",
     "numToStr/Comment.nvim"
 }
 

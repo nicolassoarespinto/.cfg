@@ -37,6 +37,9 @@ vim.opt.scrolloff = 8
 vim.opt.signcolumn = "yes"
 
 
+-- vim.opt.formatoptions:remove "o"
+-- vim.opt.foldmethod = "manual"
+
 --- Terminals ---
 --vim.keymap.set("t", "<esc><esc>", "<C-\\><C-n>")
 --vim.keymap.set("n", "<leader>tt", "<cmd>terminal<CR>")

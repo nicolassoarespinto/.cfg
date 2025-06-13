@@ -17,6 +17,7 @@ return {
     },
     config = function()
         require "custom.telescope"
+        require "custom.telescope_dbui"
     end
 
 }

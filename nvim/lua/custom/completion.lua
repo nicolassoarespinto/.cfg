@@ -40,8 +40,6 @@ cmp.setup {
     },
     { name = "copilot" },
     { name = "nvim_lsp" },
-    { name = "path" },
-    { name = "buffer" },
   },
   mapping = {
     ["<C-n>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Insert },
