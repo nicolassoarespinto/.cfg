@@ -15,8 +15,7 @@ return {
         },
       },
       { "Bilal2453/luvit-meta",                        lazy = true },
-      "williamboman/mason.nvim",
-      "williamboman/mason-lspconfig.nvim",
+      "mason-org/mason.nvim",
       "WhoIsSethDaniel/mason-tool-installer.nvim",
       { "https://git.sr.ht/~whynothugo/lsp_lines.nvim" },
 
@@ -25,18 +24,35 @@ return {
 
     },
     config = function()
-      local capabilities = nil
+      local cmp_capabilities = {}
       if pcall(require, "cmp_nvim_lsp") then
-        capabilities = require("cmp_nvim_lsp").default_capabilities()
+        cmp_capabilities = require("cmp_nvim_lsp").default_capabilities()
       end
+      local capabilities = vim.tbl_deep_extend("force",
+        {},
+        vim.lsp.protocol.make_client_capabilities(),
+        cmp_capabilities
+      )
 
       local lspconfig = require "lspconfig"
 
       local servers = {
         bashls = true,
-        pylsp = true,
+        pylsp = {
+          cmd = { "python", "-m", "pylsp" },
+          settings = {
+            pylsp = {
+              plugins = {
+                pycodestyle = {
+                  ignore = { 'W391' },
+                  maxLineLength = 100
+                }
+              }
+            }
+          }
+        },
         lua_ls = {
-          server_capabilities = {
+          capabilities = {
             semanticTokensProvider = vim.NIL,
           },
           settings = {
@@ -53,24 +69,17 @@ return {
         },
       }
 
-
-      local servers_to_install = vim.tbl_filter(function(key)
-        local t = servers[key]
-        if type(t) == "table" then
-          return not t.manual_install
-        else
-          return t
-        end
-      end, vim.tbl_keys(servers))
-
-      require("mason").setup()
-      local ensure_installed = {
-        "stylua",
-        "lua_ls",
+      local servers_to_install = {
+        "lua-language-server",
+        "python-lsp-server",
+        "bash-language-server",
+        "stylua"
       }
 
-      vim.list_extend(ensure_installed, servers_to_install)
-      require("mason-tool-installer").setup { ensure_installed = ensure_installed }
+      require("mason").setup()
+      require("mason-tool-installer").setup {
+        ensure_installed = servers_to_install
+      }
 
       for name, config in pairs(servers) do
         if config == true then
@@ -94,6 +103,8 @@ return {
           end
 
           local builtin = require "telescope.builtin"
+          -- Debug message
+          vim.notify("LSP attached to buffer " .. bufnr .. " with client " .. client.name, vim.log.levels.INFO)
 
           vim.opt_local.omnifunc = "v:lua.vim.lsp.omnifunc"
           vim.keymap.set("n", "gr", builtin.lsp_references, { buffer = bufnr })
@@ -101,62 +112,33 @@ return {
 
           vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', { buffer = bufnr })
           vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', { buffer = bufnr })
-          vim.keymap.set('n', '<leader>vws', '<cmd>lua vim.lsp.buf.workspace_symbol()<CR>', { buffer = bufnr })
-          vim.keymap.set('n', '<leader>vd', '<cmd>lua vim.diagnostic.open_float()<CR>', { buffer = bufnr })
+          vim.keymap.set('n', '[w', '<cmd>lua vim.lsp.buf.workspace_symbol()<CR>', { buffer = bufnr })
           vim.keymap.set('n', '<leader>vd', '<cmd>lua vim.diagnostic.open_float()<CR>', { buffer = bufnr })
           vim.keymap.set('n', '[d', '<cmd>lua vim.diagnostic.goto_next()<CR>', { buffer = bufnr })
           vim.keymap.set('n', ']d', '<cmd>lua vim.diagnostic.goto_prev()<CR>', { buffer = bufnr })
-          vim.keymap.set('n', '<leader>vca', '<cmd>lua vim.lsp.buf.code_action()<CR>', { buffer = bufnr })
-          vim.keymap.set('n', '<leader>vrrn', '<cmd>lua vim.lsp.buf.rename()<CR>', { buffer = bufnr })
+          vim.keymap.set('n', '<leader>[a', '<cmd>lua vim.lsp.buf.code_action()<CR>', { buffer = bufnr })
           vim.keymap.set('n', '<F2>', '<cmd>lua vim.lsp.buf.rename()<CR>', { buffer = bufnr })
           vim.keymap.set('i', '<C-h>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', { buffer = bufnr })
           vim.keymap.set({ 'n', 'x' }, '<F3>', '<cmd>lua vim.lsp.buf.format({async = true})<CR>',
             { buffer = bufnr })
-
-
-          -- Override server capabilities
-          if settings.server_capabilities then
-            for k, v in pairs(settings.server_capabilities) do
-              if v == vim.NIL then
-                ---@diagnostic disable-next-line: cast-local-type
-                v = nil
-              end
-
-              client.server_capabilities[k] = v
-            end
-          end
         end,
       })
-      --- Basic remaps --
 
-      vim.g.diagnostics_active = true
+      vim.g.diagnostics_active = false
+      vim.diagnostic.enable(false)
       function Toggle_diagnostics()
         if vim.g.diagnostics_active then
           vim.g.diagnostics_active = false
-          vim.diagnostic.disable()
+          vim.diagnostic.enable(false)
         else
           vim.g.diagnostics_active = true
-          vim.diagnostic.enable()
+          vim.diagnostic.enable(true)
         end
       end
 
       vim.keymap.set('n', '<leader>xd', Toggle_diagnostics,
         { noremap = true, silent = true, desc = "Toggle vim diagnostics" })
-
       vim.keymap.set('n', '<leader>bf', ':lua vim.lsp.buf.format()<CR>', { desc = 'Format buffer' })
-
-      -- LSP Lines ---
-      require("lsp_lines").setup()
-      vim.diagnostic.config { virtual_text = true, virtual_lines = false }
-
-      vim.keymap.set("", "<leader>l", function()
-        local config = vim.diagnostic.config() or {}
-        if config.virtual_text then
-          vim.diagnostic.config { virtual_text = false, virtual_lines = true }
-        else
-          vim.diagnostic.config { virtual_text = true, virtual_lines = false }
-        end
-      end, { desc = "Toggle lsp_lines" })
-    end,
-  },
+    end
+  }
 }
