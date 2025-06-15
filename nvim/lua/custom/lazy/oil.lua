@@ -3,7 +3,7 @@ return {
     config = function()
         require("oil").setup({
         -- Do not overwrite netrw
-        default_file_explorer = false,
+        default_file_explorer = true,
         keymaps = {
         ["?"] = { "actions.show_help", mode = "n" },
         ["<CR>"] = "actions.select",

@@ -25,7 +25,7 @@ function InsertCodeCell()
   }
   local quarto_cell_template = {
     "```{python} ",
-    "  #| echo: false",
+    "#| echo: false",
     "",
     "```",
   }
