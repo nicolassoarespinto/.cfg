@@ -14,11 +14,9 @@ return {
           },
         },
       },
-      { "Bilal2453/luvit-meta",                        lazy = true },
+      { "Bilal2453/luvit-meta", lazy = true },
       "mason-org/mason.nvim",
       "WhoIsSethDaniel/mason-tool-installer.nvim",
-      { "https://git.sr.ht/~whynothugo/lsp_lines.nvim" },
-
       -- Autoformatting
       "stevearc/conform.nvim",
 
