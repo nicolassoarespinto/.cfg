@@ -20,7 +20,7 @@ local function switch_query_buffer(next_direction)
     end
   end
 
-  table.sort(query_bufs)  -- sort by buffer number
+  table.sort(query_bufs) -- sort by buffer number
 
   -- Find current index
   local idx = tbl_index_of(query_bufs, current)
@@ -44,4 +44,3 @@ vim.api.nvim_create_autocmd("BufEnter", {
     })
   end,
 })
-

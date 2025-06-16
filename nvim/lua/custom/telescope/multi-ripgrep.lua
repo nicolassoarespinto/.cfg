@@ -6,18 +6,18 @@ local pickers = require "telescope.pickers"
 local flatten = vim.tbl_flatten
 
 
-local live_multigrep =  function(opts)
+local live_multigrep = function(opts)
   opts = opts or {}
   opts.cwd = opts.cwd and vim.fn.expand(opts.cwd) or vim.loop.cwd()
   opts.shortcuts = opts.shortcuts
-    or {
-      ["l"] = "*.lua",
-      ["v"] = "*.vim",
-      ["n"] = "*.{vim,lua}",
-      ["c"] = "*.c",
-      ["r"] = "*.rs",
-      ["g"] = "*.go",
-    }
+      or {
+        ["l"] = "*.lua",
+        ["v"] = "*.vim",
+        ["n"] = "*.{vim,lua}",
+        ["c"] = "*.c",
+        ["r"] = "*.rs",
+        ["g"] = "*.go",
+      }
   opts.pattern = opts.pattern or "%s"
 
   local custom_grep = finders.new_async_job {
@@ -47,29 +47,26 @@ local live_multigrep =  function(opts)
         table.insert(args, string.format(opts.pattern, pattern))
       end
 
-      local cmd =  flatten {
+      local cmd = flatten {
         args,
         { "--color=never", "--no-heading", "--with-filename", "--line-number", "--column", "--smart-case" },
       }
-     return cmd
-
+      return cmd
     end,
     entry_maker = make_entry.gen_from_vimgrep(opts),
     cwd = opts.cwd,
   }
 
   pickers
-    .new(opts, {
-      debounce = 100,
-      prompt_title = "Live Multi Grep",
-      finder = custom_grep,
-      previewer = conf.grep_previewer(opts),
-      sorter = require("telescope.sorters").empty(),
-    })
-    :find()
+      .new(opts, {
+        debounce = 100,
+        prompt_title = "Live Multi Grep",
+        finder = custom_grep,
+        previewer = conf.grep_previewer(opts),
+        sorter = require("telescope.sorters").empty(),
+      })
+      :find()
 end
 
 return live_multigrep
 -- live_multigrep()
-
-

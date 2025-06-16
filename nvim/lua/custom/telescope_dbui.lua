@@ -27,9 +27,9 @@ local entry_maker = function(entry)
     ordinal = entry.content,
     display = function()
       return displayer({
-                entry.name,
-                entry.content:sub(1,80)
-            })
+        entry.name,
+        entry.content:sub(1, 80)
+      })
     end,
     bufnr = entry.bufnr,
     name = entry.name,
@@ -38,14 +38,14 @@ end
 
 
 local previewer = previewers.new_buffer_previewer({
-      define_preview = function(self, entry, _)
-        if vim.api.nvim_buf_is_loaded(entry.bufnr) then
-          local lines = vim.api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
-          vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
-          vim.bo[self.state.bufnr].filetype = "sql"
-        end
-      end,
-    })
+  define_preview = function(self, entry, _)
+    if vim.api.nvim_buf_is_loaded(entry.bufnr) then
+      local lines = vim.api.nvim_buf_get_lines(entry.bufnr, 0, -1, false)
+      vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+      vim.bo[self.state.bufnr].filetype = "sql"
+    end
+  end,
+})
 
 
 local function query_buffer_picker()
@@ -73,7 +73,7 @@ local function query_buffer_picker()
     prompt_title = "Search dbui-query Buffers",
     finder = finders.new_table({
       results = entries,
-      entry_maker=entry_maker,
+      entry_maker = entry_maker,
     }),
     sorter = conf.generic_sorter({}),
     previewer = previewer,
@@ -92,4 +92,3 @@ end
 
 -- Add a keybinding:
 vim.keymap.set("n", "<leader>fq", query_buffer_picker, { desc = "Find in query buffers" })
-

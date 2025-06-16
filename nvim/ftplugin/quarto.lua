@@ -23,7 +23,7 @@ vim.api.nvim_buf_set_var(0, 'did_ftplugin', true)
 
 -- vim.api.nvim_set_hl(0, '@markup.codecell', { bg = '#000055' })
 -- vim.api.nvim_set_hl(0, '@markup.codecell', {
-  -- link = 'CursorLine',
+-- link = 'CursorLine',
 -- })
 
 vim.opt_local.foldmethod = "expr"
@@ -36,4 +36,3 @@ vim.opt_local.foldlevelstart = 99
 -- Run :ActivateNotebookMode user cmd
 vim.cmd("ActivateNotebookMode")
 vim.g.notebook_target = 'quarto'
-

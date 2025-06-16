@@ -1,10 +1,10 @@
 return {
-    "stevearc/oil.nvim",
-    config = function()
-        require("oil").setup({
-        -- Do not overwrite netrw
-        default_file_explorer = true,
-        keymaps = {
+  "stevearc/oil.nvim",
+  config = function()
+    require("oil").setup({
+      -- Do not overwrite netrw
+      default_file_explorer = true,
+      keymaps = {
         ["?"] = { "actions.show_help", mode = "n" },
         ["<CR>"] = "actions.select",
         ["<C-s>"] = { "actions.select", opts = { vertical = true } },
@@ -22,11 +22,10 @@ return {
         ["g."] = { "actions.toggle_hidden", mode = "n" },
         ["g\\"] = { "actions.toggle_trash", mode = "n" },
       },
-    view_options = {
-                show_hidden = true,
-    }
+      view_options = {
+        show_hidden = true,
+      }
     })
-        vim.keymap.set("n", "<leader>o", "<cmd>Oil<CR>", { noremap = true, silent = true })
-    end,
+    vim.keymap.set("n", "<leader>o", "<cmd>Oil<CR>", { noremap = true, silent = true })
+  end,
 }
-
