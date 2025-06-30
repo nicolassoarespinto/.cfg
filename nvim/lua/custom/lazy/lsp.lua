@@ -1,5 +1,4 @@
 return {
-  {
     "neovim/nvim-lspconfig",
     dependencies = {
       {
@@ -14,12 +13,6 @@ return {
           },
         },
       },
-      { "Bilal2453/luvit-meta", lazy = true },
-      "mason-org/mason.nvim",
-      "WhoIsSethDaniel/mason-tool-installer.nvim",
-      -- Autoformatting
-      "stevearc/conform.nvim",
-
     },
     config = function()
       local cmp_capabilities = {}
@@ -36,6 +29,7 @@ return {
 
       local servers = {
         bashls = true,
+        ts_ls = true,
         pylsp = {
           cmd = { "python", "-m", "pylsp" },
           settings = {
@@ -71,6 +65,7 @@ return {
         "lua-language-server",
         "python-lsp-server",
         "bash-language-server",
+        "typescript-language-server",
         "stylua"
       }
 
@@ -107,9 +102,7 @@ return {
           vim.opt_local.omnifunc = "v:lua.vim.lsp.omnifunc"
           vim.keymap.set("n", "gr", builtin.lsp_references, { buffer = bufnr })
           vim.keymap.set("n", "K", vim.lsp.buf.hover, { buffer = bufnr })
-
           vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', { buffer = bufnr })
-          vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', { buffer = bufnr })
           vim.keymap.set('n', '[w', '<cmd>lua vim.lsp.buf.workspace_symbol()<CR>', { buffer = bufnr })
           vim.keymap.set('n', '<leader>vd', '<cmd>lua vim.diagnostic.open_float()<CR>', { buffer = bufnr })
           vim.keymap.set('n', '[d', '<cmd>lua vim.diagnostic.goto_next()<CR>', { buffer = bufnr })
@@ -139,4 +132,3 @@ return {
       vim.keymap.set('n', '<leader>bf', ':lua vim.lsp.buf.format()<CR>', { desc = 'Format buffer' })
     end
   }
-}
