@@ -4,10 +4,10 @@ return
   'jpalardy/vim-slime',
   dev = false,
   init = function()
-    vim.g.slime_target = 'tmux'
+    vim.g.slime_target = 'neovim'
     vim.g.slime_no_mappings = true
     vim.g.slime_python_ipython = 1
-    vim.g.slime_bracked_paste = 1
+    vim.g.slime_bracketed_paste = 1
   end,
   config = function()
     require('custom.slime').setup({
