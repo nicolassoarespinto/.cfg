@@ -99,34 +99,6 @@ vim.keymap.set('n', '<leader>pp', TogglePasteCopyMode, { desc = 'Toggle paste mo
 vim.keymap.set('i', '<F12>', TogglePasteCopyMode, { desc = 'Toggle paste mode' }, { noremap = true, silent = true })
 
 
--- Move in quickfix list
-vim.keymap.set("n", "<M-j>", "<cmd>cnext<CR>")
-vim.keymap.set("n", "<M-k>", "<cmd>cprev<CR>")
--- Clear quickfix list
-function ClearQuickfix()
-  -- Ask for confirmation
-  local confirm = vim.fn.input("Clear quickfix list? [y/n]: ")
-  if confirm ~= "y" then
-    return
-  end
-  vim.fn.setqflist({})
-  print("Quickfix list cleared")
-end
-
--- Open quickfix list to the right
-function OpenQuickfixRight()
-  vim.cmd("copen")
-  vim.cmd("wincmd L")
-end 
-
-vim.keymap.set("n", "<leader>ql", OpenQuickfixRight, { desc = 'Open quickfix list to the right' })
-
-
-
--- Set command
-vim.keymap.set("n", "<leader>qf", ClearQuickfix, { desc = 'Clear quickfix list' })
-
-
 -- Lua code --
 vim.keymap.set("n", "<leader>x", ":.lua<CR>", { desc = 'Execute lua code' })
 vim.keymap.set("v", "<leader>x", ":lua<CR>", { desc = 'Execute lua code' })
