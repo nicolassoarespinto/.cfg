@@ -28,8 +28,16 @@ return {
       local lspconfig = require "lspconfig"
 
       local servers = {
+		r_language_server = {
+         cmd = { 'R', '--no-echo', '-e', 'languageserver::run()' },
+          filetypes = { "r" }, 
+          root_dir = function(fname)
+            return vim.fs.root(fname, '.git') or vim.uv.getcwd()
+          end,
+        }, 
         bashls = true,
         ts_ls = true,
+        markdown_oxide = true,
         pylsp = {
           cmd = { "python", "-m", "pylsp" },
           settings = {
