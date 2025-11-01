@@ -5,7 +5,7 @@ vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 
 -- LSP
 --
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>qd', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
 -- Navigation --
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
@@ -16,7 +16,7 @@ function LeaveBuffer()
   vim.api.nvim_buf_delete(buf_id, { force = true })
 end
 
-vim.keymap.set("n", "<leader>pd", LeaveBuffer)
+vim.keymap.set("n", "<leader>bd", LeaveBuffer)
 
 
 
@@ -29,8 +29,8 @@ vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower win
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
 -- Resize windows
-vim.keymap.set('n', '<M-,>', '<c-w>5<', { desc = 'Resize window to the left' })
-vim.keymap.set('n', '<M-.>', '<c-w>5>', { desc = 'Resize window to the right' })
+vim.keymap.set('n', '<M-.>', '<c-w>5<', { desc = 'Resize window to the left' })
+vim.keymap.set('n', '<M-,>', '<c-w>5>', { desc = 'Resize window to the right' })
 vim.keymap.set('n', '<M-t>', '<C-W>+', { desc = 'Resize window to the top' })
 vim.keymap.set('n', '<M-s>', '<C-W>-', { desc = 'Resize window to the bottom' })
 
@@ -112,6 +112,16 @@ function ClearQuickfix()
   vim.fn.setqflist({})
   print("Quickfix list cleared")
 end
+
+-- Open quickfix list to the right
+function OpenQuickfixRight()
+  vim.cmd("copen")
+  vim.cmd("wincmd L")
+end 
+
+vim.keymap.set("n", "<leader>ql", OpenQuickfixRight, { desc = 'Open quickfix list to the right' })
+
+
 
 -- Set command
 vim.keymap.set("n", "<leader>qf", ClearQuickfix, { desc = 'Clear quickfix list' })
