@@ -12,9 +12,9 @@ return {
       branch = true,
     }
 
-    vim.keymap.set("n", "<leader>qs", function() require("persistence").load() end)
-    vim.keymap.set("n", "<leader>qS", function() require("persistence").select() end)
-    vim.keymap.set("n", "<leader>ql", function() require("persistence").load({ last = true }) end)
-    vim.keymap.set("n", "<leader>qd", function() require("persistence").stop() end)
+    vim.keymap.set("n", "<leader>ps", function() require("persistence").load() end)
+    vim.keymap.set("n", "<leader>pS", function() require("persistence").select() end)
+    vim.keymap.set("n", "<leader>pl", function() require("persistence").load({ last = true }) end)
+    vim.keymap.set("n", "<leader>pd", function() require("persistence").stop() end)
   end,
 }

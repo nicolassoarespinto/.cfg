@@ -1,10 +1,12 @@
 return {
-  "stevearc/oil.nvim",
-  config = function()
-    require("oil").setup({
-      -- Do not overwrite netrw
-      default_file_explorer = true,
-      keymaps = {
+    "stevearc/oil.nvim",
+    config = function()
+        require("oil").setup({
+        default_file_explorer = true,
+        columns = {"icon", 
+                -- {"mtime", format = "%Y-%m-%d %H:%M"}
+            },
+        keymaps = {
         ["?"] = { "actions.show_help", mode = "n" },
         ["<CR>"] = "actions.select",
         ["<C-s>"] = { "actions.select", opts = { vertical = true } },
