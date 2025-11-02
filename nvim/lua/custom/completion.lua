@@ -1,110 +1,84 @@
-vim.opt.completeopt = { "menu", "menuone", "noselect" }
-vim.opt.shortmess:append "c"
-
-local lspkind = require "lspkind"
-lspkind.init {
-  symbol_map = {
-    Copilot = "",
-  },
-}
-
-vim.api.nvim_set_hl(0, "CmpItemKindCopilot", { fg = "#6CC644" })
-
-local kind_formatter = lspkind.cmp_format {
-  mode = "symbol_text",
-  menu = {
-    buffer = "[buf]",
-    nvim_lsp = "[LSP]",
-    nvim_lua = "[api]",
-    path = "[path]",
-    luasnip = "[snip]",
-    gh_issues = "[issues]",
-    tn = "[TabNine]",
-    eruby = "[erb]",
-  },
-}
-
--- Add tailwindcss-colorizer-cmp as a formatting source
-require("tailwindcss-colorizer-cmp").setup {
-  color_square_width = 2,
-}
-
-local cmp = require "cmp"
-
-cmp.setup {
-  sources = {
-    {
-      name = "lazydev",
-      -- set group index to 0 to skip loading LuaLS completions as lazydev recommends it
-      group_index = 0,
+local opts = {
+    keymap = { 
+    preset = "default" ,
+    ['<F12>'] = {'show' ,'show_documentation', 'hide_documentation'},
+    ['<C-h>'] = {'show' ,'show_documentation', 'hide_documentation'},
+    ['<C-f>'] = { 'scroll_documentation_up', 'fallback' },
+    ['<C-b>'] = { 'scroll_documentation_down', 'fallback' },
+    ['<C-y>'] = { 'accept_and_enter', 'fallback' },
+    ["<S-Tab>"] = {
+      function(cmp)
+        if vim.b[vim.api.nvim_get_current_buf()].nes_state then
+          cmp.hide()
+          return (
+                require("copilot-lsp.nes").apply_pending_nes() 
+                and require("copilot-lsp.nes").walk_cursor_end_edit()
+            )
+        end
+        if cmp.snippet_active() then
+            return cmp.accept()
+        else
+            return cmp.select_and_accept()
+        end
+      end,
+      "snippet_forward",
+      "fallback",
     },
-    { name = "copilot" },
-    { name = "nvim_lsp" },
-  },
-  mapping = {
-    ["<C-n>"] = cmp.mapping.select_next_item { behavior = cmp.SelectBehavior.Insert },
-    ["<C-p>"] = cmp.mapping.select_prev_item { behavior = cmp.SelectBehavior.Insert },
-    ["<C-y>"] = cmp.mapping(
-      cmp.mapping.confirm {
-        behavior = cmp.ConfirmBehavior.Insert,
-        select = true,
+
+
+    },
+    completion = {
+      ghost_text = { enabled = true },
+      list = { selection = { auto_insert = false } },
+      documentation = { auto_show = false, window = { border = "rounded" } },
+      menu = {
+        draw = {
+          padding = 0,
+          columns = { { "kind_icon", gap = 1 }, { gap = 1, "label" }, { "kind", gap = 2 } },
+          components = {
+            kind_icon = {
+              text = function(ctx)
+                return " " .. ctx.kind_icon .. " "
+              end,
+              highlight = function(ctx)
+                return "BlinkCmpKindIcon" .. ctx.kind
+              end,
+            },
+            kind = {
+              text = function(ctx)
+                return " " .. ctx.kind .. " "
+              end,
+            },
+          },
+        },
       },
-      { "i", "c" }
-    ),
-  },
-
-  -- Enable luasnip to handle snippet expansion for nvim-cmp
-  snippet = {
-    expand = function(args)
-      vim.snippet.expand(args.body)
-    end,
-  },
-
-  formatting = {
-    fields = { "abbr", "kind", "menu" },
-    expandable_indicator = true,
-    format = function(entry, vim_item)
-      -- Lspkind setup for icons
-      vim_item = kind_formatter(entry, vim_item)
-
-      -- Tailwind colorizer setup
-      vim_item = require("tailwindcss-colorizer-cmp").formatter(entry, vim_item)
-
-      return vim_item
-    end,
-  },
-
-  sorting = {
-    priority_weight = 2,
-    comparators = {
-      require("copilot_cmp.comparators").prioritize,
-
-      -- Below is the default comparitor list and order for nvim-cmp
-      cmp.config.compare.offset,
-      -- cmp.config.compare.scopes, --this is commented in nvim-cmp too
-      cmp.config.compare.exact,
-      cmp.config.compare.score,
-      cmp.config.compare.recently_used,
-      cmp.config.compare.locality,
-      cmp.config.compare.kind,
-      cmp.config.compare.sort_text,
-      cmp.config.compare.length,
-      cmp.config.compare.order,
     },
-  },
-  window = {
-    -- TODO: I don't like this at all for completion window, it takes up way too much space.
-    --  However, I think the docs one could be OK, but I need to fix the highlights for it
-    --
-    -- completion = cmp.config.window.bordered(),
-    -- documentation = cmp.config.window.bordered(),
-  },
+    sources = {
+      default = {"buffer", "snippets", "path" ,"dictionary" ,  "lsp", "copilot"},
+      -- default = { "copilot", "lsp", "snippets", "path" ,"buffer", "dictionary" },
+      providers = {
+        dictionary = {
+          module = "blink-cmp-dictionary",
+          min_keyword_length = 3,
+        },
+        copilot = {
+            name = "Copilot",
+            module = "blink-copilot",
+            enabled = function()
+                local flag = vim.g.blink_cmp_copilot_enabled --[[@as boolean?]]
+                return flag == nil or flag
+            end,
+            max_comppletions=5,
+            score_offset = 100,
+            deduplicate = {
+                enabled = true,
+            },
+            async = true,
+        }
+    }
+    },
+    fuzzy = { implementation = "prefer_rust" },
 }
 
--- Setup up vim-dadbod
-cmp.setup.filetype({ "sql" }, {
-  sources = {
-    { name = "vim-dadbod-completion" },
-    { name = "buffer" },
-  },
-})
+
+require("blink.cmp").setup(opts)
