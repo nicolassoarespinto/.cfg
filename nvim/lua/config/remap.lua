@@ -43,7 +43,7 @@ vim.keymap.set('n', '<M-K>', ':tabnext<CR>', { desc = 'Go to next tab' })
 vim.keymap.set('n', '<M-J>', ':tabprevious<CR>', { desc = 'Go to previous tab' })
 vim.keymap.set('n', '<M-N>', ':tabnew<CR>', { desc = 'Open new tab' })
 vim.keymap.set('n', '<M-W>', ':tabclose<CR>', { desc = 'Close tab' })
-vim.keymap.set('n', 'gt', ':tabnext<CR>', { desc = 'Go to next tab' })
+-- vim.keymap.set('n', 'gt', ':tabnext<CR>', { desc = 'Go to next tab' })
 
 
 -- <C-D> and <C-U> to scroll hal a page, but keep the cursor in center

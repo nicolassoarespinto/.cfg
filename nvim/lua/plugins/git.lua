@@ -27,6 +27,7 @@ return {
             "nvim-lua/plenary.nvim",  -- required
             "sindrets/diffview.nvim", -- optional - for diff viewing
         },
+
         config = function()
             local function open_in_split()
                 require('neogit').open({ kind = 'split' })
@@ -42,37 +43,45 @@ return {
                 reflog_view = {
                     kind = "split",
                 },
+                graph_style = 'unicode',
+
+                commit_editor = {
+                    kind = 'split',
+                },
+                popup = {
+                    kind = 'split',
+                },
+
             })
 
             vim.keymap.set('n', '<leader>gn', open_in_split, { desc = 'Open Neogit' })
         end
-},
-{
-    'aaronhallaert/advanced-git-search.nvim',
-    cmd = 'AdvancedGitSearch',
-    dependencies = {
-      'nvim-telescope/telescope.nvim',
-      'sindrets/diffview.nvim',
     },
-    keys = {
-      { '<leader>gsl', '<cmd>AdvancedGitSearch search_log_content_file<cr>', desc = 'Search log content (file)' },
-      { '<leader>gsL', '<cmd>AdvancedGitSearch search_log_content<cr>', desc = 'Search log content (repo)' },
-      { '<leader>gsdf', '<cmd>AdvancedGitSearch diff_commit_file<cr>', desc = 'Diff with commit (file)' },
-      { '<leader>gsdl', '<cmd>AdvancedGitSearch diff_commit_line', 'Diff with commit (line)' },
-      { '<leader>gsb', '<cmd>AdvancedGitSearch changed_on_branch<cr>', desc = 'Changed on branch' },
-      { '<leader>gsg', '<cmd>AdvancedGitSearch show_custom_functions<cr>', desc = 'Pick a picker' },
-    },
-    config = function()
-      require('telescope').setup({
-        extensions = {
-          advanced_git_search = {
-            show_builtin_git_pickers = true, -- show builtin pickers for show_custom_functions
-            browse_command = 'GitLink! rev={commit_hash}',
-            diff_plugin = 'diffview',
-          },
+    {
+        'aaronhallaert/advanced-git-search.nvim',
+        cmd = 'AdvancedGitSearch',
+        dependencies = {
+            'nvim-telescope/telescope.nvim',
+            'sindrets/diffview.nvim',
         },
-      })
-      require('telescope').load_extension('advanced_git_search')
-    end,
-  }
+        keys = {
+            { '<leader>gsl',  '<cmd>AdvancedGitSearch search_log_content_file<cr>', desc = 'Search log content (file)' },
+            { '<leader>gsL',  '<cmd>AdvancedGitSearch search_log_content<cr>',      desc = 'Search log content (repo)' },
+            { '<leader>gsdf', '<cmd>AdvancedGitSearch diff_commit_file<cr>',        desc = 'Diff with commit (file)' },
+            { '<leader>gsdl', '<cmd>AdvancedGitSearch diff_commit_line',            'Diff with commit (line)' },
+            { '<leader>gsb',  '<cmd>AdvancedGitSearch changed_on_branch<cr>',       desc = 'Changed on branch' },
+            { '<leader>gsg',  '<cmd>AdvancedGitSearch show_custom_functions<cr>',   desc = 'Pick a picker' },
+        },
+        config = function()
+            require('telescope').setup({
+                extensions = {
+                    advanced_git_search = {
+                        show_builtin_git_pickers = true, -- show builtin pickers for show_custom_functions
+                        diff_plugin = 'diffview',
+                    },
+                },
+            })
+            require('telescope').load_extension('advanced_git_search')
+        end,
+    }
 }

@@ -14,6 +14,7 @@ return {
         python = true,
         -- markdown = true,
         matlab = true,
+        lua = true,
         javascript = true,
         typescript = true,
         julia = true,

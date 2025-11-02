@@ -54,12 +54,23 @@ local opts = {
       },
     },
     sources = {
-      default = {"buffer", "snippets", "path" ,"dictionary" ,  "lsp", "copilot"},
+      default = {"lazydev", "buffer", "snippets", "path" ,"dictionary" ,  "lsp", "copilot"},
       -- default = { "copilot", "lsp", "snippets", "path" ,"buffer", "dictionary" },
+      per_filetype = {
+        markdown = { "lsp", "dictionary"},
+        AvanteInput = {"dictionary"},
+        Avante = {"dictionary"},
+      },
       providers = {
         dictionary = {
           module = "blink-cmp-dictionary",
           min_keyword_length = 3,
+        },
+        lazydev = {
+            name = "LazyDev",
+            module = "lazydev.integrations.blink",
+            -- make lazydev completions top priority (see `:h blink.cmp`)
+            score_offset = 100,
         },
         copilot = {
             name = "Copilot",
