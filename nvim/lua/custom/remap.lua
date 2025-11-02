@@ -96,7 +96,6 @@ function TogglePasteCopyMode()
 end
 
 vim.keymap.set('n', '<leader>pp', TogglePasteCopyMode, { desc = 'Toggle paste mode' }, { noremap = true, silent = true })
-vim.keymap.set('i', '<F12>', TogglePasteCopyMode, { desc = 'Toggle paste mode' }, { noremap = true, silent = true })
 
 
 -- Lua code --
