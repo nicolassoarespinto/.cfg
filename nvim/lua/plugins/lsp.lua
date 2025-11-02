@@ -25,8 +25,6 @@ return {
         cmp_capabilities
       )
 
-      local lspconfig = require "lspconfig"
-
       local servers = {
 		r_language_server = {
          cmd = { 'R', '--no-echo', '-e', 'languageserver::run()' },
@@ -81,18 +79,23 @@ return {
       require("mason-tool-installer").setup {
         ensure_installed = servers_to_install
       }
+      
+      -- Set global capabilities for all LSP servers
+      vim.lsp.config("*", {
+        capabilities = capabilities,
+      })
 
       for name, config in pairs(servers) do
         if config == true then
           config = {}
         end
-        config = vim.tbl_deep_extend("force", {}, {
-          capabilities = capabilities,
-        }, config)
-
-        lspconfig[name].setup(config)
+        if next(config) ~= nil then
+              local lsp_config = vim.tbl_deep_extend("force", {}, config)
+              vim.lsp.config(name, lsp_config)
+        end
+        vim.lsp.enable(name)
       end
-
+        
       vim.api.nvim_create_autocmd("LspAttach", {
         callback = function(args)
           local bufnr = args.buf
