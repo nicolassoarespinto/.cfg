@@ -1,1 +1,5 @@
-require("custom")
+require("config.set")
+require("config.remap")
+require("config.autocmds")
+-- require("config.lazy")
+require("config.style")
