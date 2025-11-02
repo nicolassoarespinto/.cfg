@@ -1,3 +1,4 @@
+
 return {
   "yetone/avante.nvim",
   event = "VeryLazy",
@@ -6,8 +7,8 @@ return {
   opts = {
     -- add any opts here
     -- for example
-    provider="claude",
-    auto_suggestions_provider = "copilot",
+    provider="copilot",
+    auto_suggestions_provider = false,
   },
   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
   build = "make",
