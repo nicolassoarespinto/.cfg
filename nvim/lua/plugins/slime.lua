@@ -7,7 +7,7 @@ return
     vim.g.slime_target = 'neovim'
     vim.g.slime_no_mappings = true
     vim.g.slime_python_ipython = 1
-    vim.g.slime_bracketed_paste = 1
+    vim.g.slime_bracketed_paste = 0
   end,
   config = function()
     require('custom.slime').setup({

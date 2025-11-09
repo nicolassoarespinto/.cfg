@@ -39,10 +39,6 @@ return {
       },
       panel = { enabled = false },
       telemetry = { enabled = false },
-      nes = {
-        enabled = false,
-        move_count_threshold = 3,
-      },
    keymap = {
           accept_and_goto = "<leader>p",
           accept = false,
