@@ -3,6 +3,7 @@ return {
         "nvim-lualine/lualine.nvim",
         dependencies = {
             "nvim-tree/nvim-web-devicons",
+            "folke/snacks.nvim",
             {
                 "AndreM222/copilot-lualine",
                 dependencies = "zbirenbaum/copilot.lua",
@@ -68,7 +69,9 @@ return {
                             cond = function()
                                 return require("lazy.status").has_updates() and not is_dapui()
                             end,
-                            color = { fg = "#ff9e64" },
+                            color = function()
+                                return { fg = Snacks.util.color("DiagnosticWarn") }
+                            end,
                         },
                         {
                             "copilot",
@@ -76,36 +79,12 @@ return {
                                 return not is_dapui()
                             end,
                         },
-                        {
-                            "encoding",
-                            cond = function()
-                                return not is_dapui()
-                            end,
-                        },
-                        {
-                            "fileformat",
-                            cond = function()
-                                return not is_dapui()
-                            end,
-                        },
+                        "encoding",
+                        "fileformat",
                         "filetype",
                     },
-                    lualine_y = {
-                        {
-                            "progress",
-                            cond = function()
-                                return not is_dapui()
-                            end,
-                        },
-                    },
-                    lualine_z = {
-                        {
-                            "location",
-                            cond = function()
-                                return not is_dapui()
-                            end,
-                        },
-                    },
+                    lualine_y = { "progress" },
+                    lualine_z = { "location" },
                 },
             }
         end,
