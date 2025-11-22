@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+
+# You can use it as a git alias in .gitconfig, e.g.:
+# [alias]
+#   wt-add = !git-worktree-add $1
+#
+
+set -e
+set -u
+set -o pipefail
+
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  echo "Create a Git worktree for the following branch and set up the environment."
+  echo "Usage: $(basename "$0") <branch-name> [base-branch]"
+  echo "  <branch-name>: The branch name (will be created if it doesn't exist)"
+  echo "  [base-branch]: Optional base branch for new branch creation (default: current branch)"
+  exit 1
+fi
+
+WORKTREE_BRANCH=$1
+BASE_BRANCH=${2:-$(git rev-parse --abbrev-ref HEAD)}
+PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
+
+# Shorten branch name for directory path (useful for long auto-generated names)
+# Also sanitizes slashes and dots to avoid filesystem issues
+shorten_branch_name() {
+  local branch=$1
+  local max_length=30
+
+  # First, sanitize the branch name
+  # - Replace slashes with underscores to avoid nested directories
+  # - Replace dots with dashes to avoid hidden files and path issues
+  local sanitized="${branch//\//_}"
+  sanitized="${sanitized//./-}"
+
+  # If sanitized name is short enough, use as-is
+  if [ ${#sanitized} -le $max_length ]; then
+    echo "$sanitized"
+    return
+  fi
+
+  # For long names, try to intelligently shorten
+  # Pattern: feature_PROJ-1234-long-description-hash
+  # Keep prefix and hash, truncate middle
+
+  # If contains underscore (was originally slash), preserve the prefix
+  if [[ "$sanitized" == *_* ]]; then
+    local prefix="${sanitized%%_*}"
+    local rest="${sanitized#*_}"
+    local prefix_len=${#prefix}
+    local remaining=$((max_length - prefix_len - 1))  # -1 for the underscore
+
+    # If rest is still too long, take first part and last part (likely hash)
+    if [ ${#rest} -gt $remaining ]; then
+      local take_start=$((remaining - 8))  # Reserve 8 chars for end (hash)
+      local shortened="${rest:0:$take_start}--${rest: -6}"
+      echo "${prefix}_${shortened}"
+    else
+      echo "$sanitized"
+    fi
+  else
+    # No underscore, just truncate with ellipsis and keep end (likely hash)
+    local shortened="${sanitized:0:22}--${sanitized: -6}"
+    echo "$shortened"
+  fi
+}
+
+WORKTREE_DIR_NAME=$(shorten_branch_name "$WORKTREE_BRANCH")
+WORKTREE_PATH=~/worktree/$PROJECT_NAME/$WORKTREE_DIR_NAME
+
+echo
+echo "Branch: $WORKTREE_BRANCH"
+echo "Worktree path: $WORKTREE_PATH"
+echo
+
+# Check if worktree already exists
+if [ -d "$WORKTREE_PATH" ]; then
+  echo "Error: Worktree directory already exists at $WORKTREE_PATH"
+  exit 1
+fi
+
+# Check if branch exists
+if git rev-parse --verify "$WORKTREE_BRANCH" >/dev/null 2>&1; then
+  echo "Branch '$WORKTREE_BRANCH' exists."
+  BRANCH_EXISTS=true
+else
+  echo "Branch '$WORKTREE_BRANCH' does not exist."
+  BRANCH_EXISTS=false
+fi
+
+# Handle branch creation if needed
+if [ "$BRANCH_EXISTS" = false ]; then
+  echo
+  read -p "Create new branch '$WORKTREE_BRANCH' from '$BASE_BRANCH'? [y/N] " -n 1 -r
+  echo
+
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Aborted."
+    exit 1
+  fi
+
+  echo "Creating branch '$WORKTREE_BRANCH' from '$BASE_BRANCH' ..."
+  git branch "$WORKTREE_BRANCH" "$BASE_BRANCH"
+fi
+
+echo
+echo "Creating the worktree directory structure ..."
+mkdir -p "$(dirname "$WORKTREE_PATH")"
+
+echo "Creating the worktree ..."
+git worktree add "$WORKTREE_PATH" "$WORKTREE_BRANCH"
+
+echo
+echo "Copying the sources for the environment ..."
+for file in .tool-versions .env .envrc; do
+  [ -f "$file" ] && cp "$file" "$WORKTREE_PATH" && echo "  Copied: $file"
+done
+
+# Check for Python in the worktree context
+if command -v python >/dev/null 2>&1; then
+  echo
+  echo "The current Python is ..."
+  python --version
+  which python
+
+  echo
+  read -p "Do you want to install Virtual Environment for $WORKTREE_BRANCH? [y/N] " -n 1 -r
+  echo
+
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    CURRENT_WORK_DIR="$(pwd)"
+    cd "$WORKTREE_PATH"
+
+    if command -v uv >/dev/null 2>&1; then
+      uv venv
+      echo
+      echo "Virtual Environment is created at $WORKTREE_PATH/.venv"
+    else
+      echo "Error: 'uv' command not found. Please install it first."
+      cd "$CURRENT_WORK_DIR"
+      exit 1
+    fi
+
+    cd "$CURRENT_WORK_DIR"
+  fi
+fi
+
+echo
+echo "✓ Worktree created successfully!"
+echo "  Branch: $WORKTREE_BRANCH"
+echo "  Path: $WORKTREE_PATH"
+echo
+echo "To switch to the worktree, run:"
+echo "  cd $WORKTREE_PATH"
+
+exit 0

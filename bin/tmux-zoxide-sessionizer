@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+# tmux-zoxide-sessionizer
+# Opens an fzf popup to select from zoxide history and creates/switches to a tmux session
+
+set -e
+set -u
+set -o pipefail
+
+# Check if zoxide is installed
+if ! command -v zoxide >/dev/null 2>&1; then
+  echo "Error: zoxide is not installed. Please install it first." >&2
+  exit 1
+fi
+
+# Check if fzf is installed
+if ! command -v fzf >/dev/null 2>&1; then
+  echo "Error: fzf is not installed. Please install it first." >&2
+  exit 1
+fi
+
+# Check if tmux-sessionizer exists
+SESSIONIZER="$HOME/.local/bin/tmux-sessionizer"
+if [ ! -x "$SESSIONIZER" ]; then
+  echo "Error: tmux-sessionizer not found at $SESSIONIZER" >&2
+  exit 1
+fi
+
+# Get zoxide directory list
+ZOXIDE_LIST=$(zoxide query --list 2>/dev/null)
+
+if [ -z "$ZOXIDE_LIST" ]; then
+  echo "Error: No directories in zoxide history" >&2
+  exit 1
+fi
+
+# Count directories
+DIR_COUNT=$(echo "$ZOXIDE_LIST" | wc -l)
+echo "Found $DIR_COUNT director(ies) in zoxide history" >&2
+echo >&2
+
+# Use fzf to select a directory
+SELECTED=$(echo "$ZOXIDE_LIST" | fzf \
+  --height=100% \
+  --border \
+  --prompt="Select directory: " \
+  --preview="ls -la {} | head -20" \
+  --preview-window=right:50%:wrap \
+  --header="Navigate to directory (ESC to cancel)")
+
+# Check if user cancelled
+if [ -z "$SELECTED" ]; then
+  exit 0
+fi
+
+# Launch tmux-sessionizer with the selected directory
+exec "$SESSIONIZER" "$SELECTED"

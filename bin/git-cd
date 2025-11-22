@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+# Interactive worktree selector using fzf
+# Allows quick navigation between worktrees of the same git repository
+
+set -e
+set -u
+set -o pipefail
+
+# Check if fzf is installed
+if ! command -v fzf >/dev/null 2>&1; then
+  echo "Error: fzf is not installed. Please install it first." >&2
+  exit 1
+fi
+
+# Check if we're in a git repository
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "Error: Not in a git repository." >&2
+  exit 1
+fi
+
+PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
+MAIN_WORKTREE=$(git rev-parse --show-toplevel)
+WORKTREE_BASE=~/worktree/$PROJECT_NAME
+CURRENT_DIR=$(pwd)
+
+# Get all worktrees using git worktree list
+WORKTREE_PATHS=()
+while IFS= read -r line; do
+  # Parse "git worktree list" output: path, commit, [branch]
+  worktree_path=$(echo "$line" | awk '{print $1}')
+  if [ -d "$worktree_path" ]; then
+    WORKTREE_PATHS+=("$worktree_path")
+  fi
+done < <(git worktree list --porcelain | grep '^worktree ' | sed 's/^worktree //')
+
+if [ ${#WORKTREE_PATHS[@]} -eq 0 ]; then
+  echo "Error: No worktrees found" >&2
+  exit 1
+fi
+
+# Create display list with paths and branch names
+DISPLAY_LIST=""
+for worktree_path in "${WORKTREE_PATHS[@]}"; do
+  # Get branch name from the worktree
+  branch_name=$(cd "$worktree_path" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+
+  # Determine display label (show "main" for main worktree, path for others)
+  if [ "$worktree_path" = "$MAIN_WORKTREE" ]; then
+    display_label="[main]"
+  else
+    display_label=$(basename "$worktree_path")
+  fi
+
+  DISPLAY_LIST+="$worktree_path|$branch_name|$display_label"$'\n'
+done
+
+# Remove trailing newline
+DISPLAY_LIST="${DISPLAY_LIST%$'\n'}"
+
+echo "Found ${#WORKTREE_PATHS[@]} worktree(s) for project: $PROJECT_NAME" >&2
+echo >&2
+
+# Use fzf to select a worktree
+SELECTED=$(echo "$DISPLAY_LIST" | fzf \
+  --height=40% \
+  --border \
+  --delimiter="|" \
+  --with-nth=2,3 \
+  --prompt="Select worktree: " \
+  --preview="ls -la {1} | head -20" \
+  --preview-window=right:50%:wrap \
+  --header="Navigate to worktree (ESC to cancel)")
+
+# Check if user cancelled
+if [ -z "$SELECTED" ]; then
+  echo "Cancelled." >&2
+  exit 0
+fi
+
+# Extract the path from the selection
+SELECTED_PATH=$(echo "$SELECTED" | cut -d'|' -f1)
+
+# Since we can't change the parent shell's directory from a script,
+# we need to output the path for the shell function to use
+echo "$SELECTED_PATH"
