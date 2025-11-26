@@ -42,7 +42,11 @@ vim.opt.signcolumn = "yes"
 
 --- Terminals ---
 --vim.keymap.set("t", "<esc><esc>", "<C-\\><C-n>")
---vim.keymap.set("n", "<leader>tt", "<cmd>terminal<CR>")
+-- Login-shell helper: open :terminal with bash -l when needed
+vim.api.nvim_create_user_command('TermLogin', function(opts)
+  local args = opts.args ~= "" and (" " .. opts.args) or ""
+  vim.cmd("terminal bash -l" .. args)
+end, { nargs = "*", desc = "Open bash -l terminal (uses ~/.bash_profile)" })
 
 
 -- Slime ---

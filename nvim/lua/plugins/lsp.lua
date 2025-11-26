@@ -31,7 +31,7 @@ return {
 
         local servers_to_install = {
             "lua-language-server",
-            "python-lsp-server",
+            -- "python-lsp-server",
             "bash-language-server",
             "typescript-language-server",
             "stylua"
@@ -68,7 +68,9 @@ return {
                     settings = {}
                 end
                 -- Debug message
-                vim.notify("LSP attached to buffer " .. bufnr .. " with client " .. client.name, vim.log.levels.INFO)
+                -- if vi
+                    -- vim.notify("LSP attached to buffer " .. bufnr .. " with client " .. client.name, vim.log.levels.INFO)
+
                 vim.opt_local.omnifunc = "v:lua.vim.lsp.omnifunc"
                 vim.keymap.set("n", "K", vim.lsp.buf.hover, { buffer = bufnr })
                 vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', { buffer = bufnr })

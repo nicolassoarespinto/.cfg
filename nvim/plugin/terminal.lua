@@ -11,10 +11,11 @@ vim.api.nvim_create_autocmd("TermOpen", {
 })
 
 -- Easily hit escape in terminal mode
-vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', { desc = 'Exit terminal' })
+-- vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', { desc = 'Exit terminal' })
 
 local function open_terminal()
-  vim.cmd("vsplit term://bash")
+  -- Use login shell so ~/.bash_profile is sourced
+  vim.cmd("vsplit term://bash -l")
 end
 
 -- Switch to existing terminal if it exists

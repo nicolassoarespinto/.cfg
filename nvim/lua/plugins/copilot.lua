@@ -48,7 +48,8 @@ return {
     -- Clear copilot suggestion with Esc if visible, otherwise preserve default Esc behavior
     vim.keymap.set("n", "<esc>", function()
         if not require("copilot-lsp.nes").clear() then
-            -- fallback to other functionality
+                -- fallback to other functionality
+                vim.cmd("nohlsearch")
         end
     end, { desc = "Clear Copilot suggestion or fallback" })
 end,

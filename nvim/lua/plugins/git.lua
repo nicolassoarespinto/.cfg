@@ -1,4 +1,3 @@
--- Adds git related signs to the gutter, as well as utilities for managing changes
 return {
     {
         "tpope/vim-fugitive",
@@ -19,6 +18,20 @@ return {
             vim.keymap.set('n', '<leader>gp', ':Gitsigns preview_hunk<CR>', { desc = 'Preview Git Hunk' })
             vim.keymap.set('n', '<leader>gg', ':Gitsigns toggle_signs<CR>', { desc = 'Toggle Gitsigns' })
             vim.keymap.set('n', '<leader>gt', ':Gitsigns toggle_current_line_blame<CR>', { desc = 'Toggle Gitsigns' })
+
+            local gs = require('gitsigns')
+
+            -- navigate hunks
+            local nav_and_center = function(direction)
+                gs.nav_hunk(direction, { preview = true })
+                -- zz for centering screen
+                -- wait a ms to ensure the hunk is loaded
+                vim.defer_fn(function()
+                    vim.cmd('normal! zz')
+                end, 20)
+            end
+            vim.keymap.set('n', ']g', function() nav_and_center('next') end, { desc = 'Next Hunk' })
+            vim.keymap.set('n', '[g', function() nav_and_center('prev') end, { desc = 'Next Hunk' })
         end
     },
     {

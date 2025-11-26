@@ -34,7 +34,8 @@ local function setup_terminal()
   local buftype = vim.api.nvim_buf_get_option(float.state.buf_id, 'buftype')
   if buftype ~= 'terminal' then
     vim.api.nvim_set_current_win(float.state.win_id)
-    vim.fn.termopen(vim.o.shell, {
+    -- Start login shell so ~/.bash_profile is sourced
+    vim.fn.termopen({ "bash", "-l" }, {
       on_exit = function()
         float.hide()
         float.clear()

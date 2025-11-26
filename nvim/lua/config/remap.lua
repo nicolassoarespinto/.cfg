@@ -4,6 +4,13 @@
 vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 
+
+vim.keymap.set("v", "$(", "<esc>`>a)<esc>`<i(<esc>", { desc = "Wrap in parentheses" })
+vim.keymap.set("v", "$[", "<esc>`>a]<esc>`<i[<esc>", { desc = "Wrap in brackets" })
+vim.keymap.set("v", "${", "<esc>`>a}<esc>`<i{<esc>", { desc = "Wrap in braces" })
+vim.keymap.set("v", "$'", "<esc>`>a'<esc>`<i'<esc>", { desc = "Wrap in single quotes" })
+vim.keymap.set("v", '$"', '<esc>`>a"<esc>`<i"<esc>', { desc = "Wrap in double quotes" })
+
 -- better indenting
 vim.keymap.set('v', '<', '<gv')
 vim.keymap.set('v', '>', '>gv')
@@ -82,27 +89,6 @@ vim.keymap.set('n', '<leader>ji', '<Plug>SlimeParagraphSend}', { desc = 'Send cu
 
 -- slimeconfig to <leader>ss
 vim.keymap.set('n', '<leader>ss', ':SlimeConfig<CR>', { desc = 'Slime config' })
-
-
-
---- Map to toggle "paste+copy mode" (norelativenumber, nonumber, paste)
-function TogglePasteCopyMode()
-  if vim.o.paste then
-    vim.o.paste = false
-    vim.wo.relativenumber = true
-    vim.wo.number = true
-    vim.o.mouse = 'a'
-    vim.api.nvim_echo({ { 'Paste mode disabled', 'Normal' } }, true, {})
-  else
-    vim.o.paste = true
-    vim.wo.relativenumber = false
-    vim.wo.number = false
-    vim.o.mouse = ''
-    vim.api.nvim_echo({ { 'Paste mode enabled', 'Normal' } }, true, {})
-  end
-end
-
-vim.keymap.set('n', '<leader>pp', TogglePasteCopyMode, { desc = 'Toggle paste mode' }, { noremap = true, silent = true })
 
 
 -- Lua code --

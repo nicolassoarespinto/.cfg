@@ -17,6 +17,7 @@ return {
       { "S", mode = { "n", "x", "o" }, function() require("flash").jump() end, desc = "Flash" },
       { "R", mode = { "n", "x", "o" }, function() require("flash").treesitter() end, desc = "Flash Treesitter" },
       { ';', mode = { "n", "x", "o" }, false },
+      { ',', mode = { "n", "x", "o" }, false },
     {
       "s",
       function()
