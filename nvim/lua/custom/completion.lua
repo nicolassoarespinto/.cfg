@@ -54,7 +54,7 @@ local opts = {
       },
     },
     sources = {
-      default = {"lazydev", "buffer", "snippets", "path" ,"dictionary" ,  "lsp", "copilot"},
+      default = {"lazydev", "buffer", "snippets", "path" ,"dictionary" , "copilot",  "lsp"},
       -- default = { "copilot", "lsp", "snippets", "path" ,"buffer", "dictionary" },
       per_filetype = {
         markdown = { "lsp", "dictionary"},
@@ -79,8 +79,8 @@ local opts = {
                 local flag = vim.g.blink_cmp_copilot_enabled --[[@as boolean?]]
                 return flag == nil or flag
             end,
-            max_comppletions=5,
-            score_offset = 100,
+            -- max_completions=5,
+            -- score_offset = 100,
             deduplicate = {
                 enabled = true,
             },

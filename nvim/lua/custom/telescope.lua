@@ -1,7 +1,14 @@
 local data = assert(vim.fn.stdpath "data")
+local actions = require('telescope.actions')
 
 require('telescope').setup {
-    defaults = {},
+    defaults = {
+        mappings = {
+            -- Use <C-l> for vertical splits and disable the default <C-v> binding
+            i = { ['<C-l>'] = actions.select_vertical, ['<C-v>'] = false },
+            n = { ['<C-l>'] = actions.select_vertical, ['<C-v>'] = false },
+        },
+    },
     extensions = {
         fzf = {},
         history = {
@@ -32,7 +39,7 @@ vim.keymap.set('n', '<leader>f[',
     end)
 
 -- Search from home directorey
-vim.keymap.set('n', '<leader>f]',
+vim.keymap.set('n', '<leader>f.',
     function()
         local ignore_patterns = { "miniconda", "anaconda" }
         local opts = {
@@ -52,9 +59,15 @@ local telescope_meta_picker = function()
     pickers = {}
 end
 
+vim.keymap.set('n', '<leader>fg',
+    function()
+        builtin.live_grep({
+            file_ignore_patterns = {"node_modules", ".git", ".venv", "miniconda3"}
+        })
+    end)
 
-vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
 vim.keymap.set('n', '<leader>fj', require "custom.telescope.multi-ripgrep", {})
+vim.keymap.set('n', '<leader>fz', require "custom.telescope.zoxide", { desc = 'Zoxide picker' })
 vim.keymap.set('n', '<leader>ffg', builtin.git_files, {})
 vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})

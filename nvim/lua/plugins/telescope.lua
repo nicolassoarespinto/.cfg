@@ -48,7 +48,7 @@ return {
         'bassamsdata/namu.nvim',
         keys = {
             {
-                '<leader>ss',
+                '<leader>sn',
                 function() require('namu.namu_symbols').show() end,
                 desc = 'Symbols (Document)',
             },
