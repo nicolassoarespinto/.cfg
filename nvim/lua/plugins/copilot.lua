@@ -18,13 +18,13 @@ return {
         javascript = true,
         typescript = true,
         julia = true,
-        markdown = true,
-        help = true,
+        markdown = false,
+        help = false,
         ["*"] = false,
       },
       suggestion = {
         enabled = false,
-        auto_trigger = true,
+        auto_trigger = false,
         hide_during_completion = true,
         debounce = 75,
         trigger_on_accept = true,
@@ -46,11 +46,11 @@ return {
     },
       }
     -- Clear copilot suggestion with Esc if visible, otherwise preserve default Esc behavior
-    vim.keymap.set("n", "<esc>", function()
-        if not require("copilot-lsp.nes").clear() then
-                -- fallback to other functionality
-                vim.cmd("nohlsearch")
-        end
-    end, { desc = "Clear Copilot suggestion or fallback" })
+    -- vim.keymap.set("n", "<esc>", function()
+    --     if not require("copilot-lsp.nes").clear() then
+    --             -- fallback to other functionality
+    --             vim.cmd("nohlsearch")
+    --     end
+    -- end, { desc = "Clear Copilot suggestion or fallback" })
 end,
 }

@@ -17,7 +17,7 @@ return {
             },
             nes = {
             enabled = function(buf)
-                    return vim.g.sidekick_nes ~= false and vim.b.sidekick_nes ~= false
+                    return not not(vim.g.sidekick_nes ~= false and vim.b.sidekick_nes ~= false)
                 end
             },
             jump = {

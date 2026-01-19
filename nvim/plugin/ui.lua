@@ -24,9 +24,10 @@ vim.api.nvim_create_user_command("ToggleLualine", ToggleLualine, {
 -- Optional: Add a keymap (uncomment if desired)
 vim.keymap.set("n", "<F4>", ToggleLualine, { desc = "Toggle lualine" })
 
--- hide lua line when starting neovim
-vim.api.nvim_create_autocmd("VimEnter", {
-    callback = function()
-        require("lualine").hide()
-    end
-})
+--
+-- -- hide lua line when starting neovim
+-- vim.api.nvim_create_autocmd("VimEnter", {
+--     callback = function()
+--         require("lualine").hide()
+--     end
+-- })

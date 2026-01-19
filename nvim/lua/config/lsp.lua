@@ -18,6 +18,13 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.keymap.set('i', '<C-h>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', { buffer = bufnr })
     vim.keymap.set({ 'n', 'x' }, '<F3>', '<cmd>lua vim.lsp.buf.format({async = true})<CR>',
       { buffer = bufnr })
+    if pcall(require, "namu.namu_symbols") then
+      vim.keymap.set('n', '<leader>sn', function() require('namu.namu_symbols').show() end,
+        { buffer = bufnr, desc = 'Symbols (Document)' })
+
+      vim.keymap.set('n', '<leader>sd', function() require('namu.namu_diagnostics').show() end,
+        { buffer = bufnr, desc = 'Symbols (Document)' })
+    end
   end,
 })
 

@@ -10,4 +10,3 @@ end
 
 -- vim.cmd('silent! colorscheme kanagawa-wave')
 vim.cmd('silent! set background=dark')
-vim.notify("changed style")

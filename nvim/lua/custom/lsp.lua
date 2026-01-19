@@ -81,6 +81,7 @@ function M.toggle_python_lsp()
 
   -- Enable the new LSP after a short delay
   vim.defer_fn(function()
+    vim.lsp.enable(prev_lsp, false)
     vim.lsp.enable(next_lsp)
     vim.notify(
       string.format("Switched from %s to %s", prev_lsp, next_lsp),
@@ -166,7 +167,9 @@ function M.lsp_servers()
     bashls = true,
     ts_ls = true,
     markdown_oxide = true,
-    pylsp = true,
+    pylsp = false,
+    ty = true,
+    basedpyright = false,
     lua_ls = true,
   }
 
@@ -175,8 +178,10 @@ end
 
 function M.start_servers()
   local servers = M.lsp_servers()
-  for name, config in pairs(servers) do
-    vim.lsp.enable(name)
+  for name, enabled in pairs(servers) do
+    if enabled then
+        vim.lsp.enable(name)
+    end
   end
 end
 
@@ -197,21 +202,21 @@ function M.setup()
     ensure_installed = servers_to_install
   }
 
-  -- Set global capabilities for all LSP servers
-  vim.lsp.config("*", {
-    capabilities = capabilities,
-  })
-
-  for name, config in pairs(servers) do
-    if config == true then
-      config = {}
+  for name, enabled in pairs(servers) do
+    vim.lsp.config(name, {capabilities = capabilities})
+    if enabled then
+        -- vim.notify(string.format("enabled %s", name))
+        vim.lsp.enable(name)
     end
-    if next(config) ~= nil then
-      local lsp_config = vim.tbl_deep_extend("force", {}, config)
-      vim.lsp.config(name, lsp_config)
-    end
-    vim.lsp.enable(name)
   end
+
+
+  -- Set global capabilities for all LSP servers
+  -- vim.lsp.config("*", {
+  --   capabilities = capabilities,
+  -- })
+  --
+
   M.create_commands()
 end
 

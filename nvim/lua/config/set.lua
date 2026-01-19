@@ -37,9 +37,6 @@ vim.opt.scrolloff = 8
 vim.opt.signcolumn = "yes"
 
 
--- vim.opt.formatoptions:remove "o"
--- vim.opt.foldmethod = "manual"
-
 --- Terminals ---
 --vim.keymap.set("t", "<esc><esc>", "<C-\\><C-n>")
 -- Login-shell helper: open :terminal with bash -l when needed
