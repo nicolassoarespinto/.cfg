@@ -54,12 +54,12 @@ local opts = {
       },
     },
     sources = {
-      default = {"lazydev", "buffer", "snippets", "path" ,"dictionary" , "copilot",  "lsp"},
+      default = {"lazydev", "buffer", "snippets", "path" , "copilot",  "lsp"},
       -- default = { "copilot", "lsp", "snippets", "path" ,"buffer", "dictionary" },
       per_filetype = {
-        markdown = { "lsp", "dictionary"},
-        AvanteInput = {"dictionary"},
-        Avante = {"dictionary"},
+        markdown = { "lsp"},
+        AvanteInput = {},
+        Avante = {},
       },
       providers = {
         dictionary = {
