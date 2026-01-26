@@ -96,12 +96,20 @@ return {
         local ok, zoxide = pcall(require, "custom.telescope.zoxide")
         if not ok then return end
         vim.keymap.set("n", "z", function()
-          zoxide({
+          zoxide.pick({
             layout_strategy = "vertical",
             layout_config = { width = 0.8, height = 0.7 },
           })
         end, { buffer = event.buf, desc = "Zoxide (Telescope)" })
-        vim.keymap.set("n", "f", oil_fzf_dir_picker, { buffer = event.buf, desc = "FZF dir picker (Oil)" })
+        vim.keymap.set("n", "<C-f>", function()
+          local ok_oil, oil = pcall(require, "oil")
+          if not ok_oil then return end
+          local cwd = oil.get_current_dir() or vim.loop.cwd()
+          zoxide.refine({
+            cwd = cwd,
+            prompt_title = "Refine: " .. cwd,
+          })
+        end, { buffer = event.buf, desc = "Refine dir (Telescope)" })
       end,
     })
   end,

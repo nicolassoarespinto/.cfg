@@ -67,7 +67,9 @@ vim.keymap.set('n', '<leader>fg',
     end)
 
 vim.keymap.set('n', '<leader>fj', require "custom.telescope.multi-ripgrep", {})
-vim.keymap.set('n', '<leader>fz', require "custom.telescope.zoxide", { desc = 'Zoxide picker' })
+vim.keymap.set('n', '<leader>fz', function()
+    require("custom.telescope.zoxide").pick()
+end, { desc = 'Zoxide picker' })
 vim.keymap.set('n', '<leader>ffg', builtin.git_files, {})
 vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
