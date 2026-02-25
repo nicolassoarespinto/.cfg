@@ -11,6 +11,7 @@ curl -s https://api.github.com/repos/nelsonenzo/tmux-appimage/releases/latest \
 && chmod +x tmux.appimage
 
 ## move it into your $PATH
-mv tmux.appimage ~/.local/bin/tmux
+mkdir -p ~/.local/src/tmux/
+mv tmux.appimage ~/.local/src/tmux
 
 
