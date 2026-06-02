@@ -28,62 +28,163 @@ fi
 
 PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
 MAIN_WORKTREE=$(git rev-parse --show-toplevel)
+WORKTREE_BASE=~/worktrees/$PROJECT_NAME
 
-# Get all worktrees using git worktree list
-WORKTREE_PATHS=()
+# Get all existing worktrees
+declare -A WORKTREE_BRANCHES
 while IFS= read -r line; do
   worktree_path=$(echo "$line" | awk '{print $1}')
   if [ -d "$worktree_path" ]; then
-    WORKTREE_PATHS+=("$worktree_path")
+    branch_name=$(cd "$worktree_path" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+    WORKTREE_BRANCHES["$branch_name"]="$worktree_path"
   fi
 done < <(git worktree list --porcelain | grep '^worktree ' | sed 's/^worktree //')
 
-if [ ${#WORKTREE_PATHS[@]} -eq 0 ]; then
-  echo "Error: No worktrees found" >&2
-  exit 1
-fi
+# Get all branches (local and remote)
+ALL_BRANCHES=()
+while IFS= read -r branch; do
+  # Remove remote prefix and duplicates
+  branch=$(echo "$branch" | sed 's/^origin\///')
+  ALL_BRANCHES+=("$branch")
+done < <(git branch -a --format='%(refname:short)' | grep -v 'HEAD' | sort -u)
 
-# Create display list with paths and branch names
+# Create display list with both worktrees and available branches
 DISPLAY_LIST=""
-for worktree_path in "${WORKTREE_PATHS[@]}"; do
-  # Get branch name from the worktree
-  branch_name=$(cd "$worktree_path" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+WORKTREE_COUNT=0
+BRANCH_COUNT=0
 
-  # Determine display label (show "main" for main worktree, path for others)
-  if [ "$worktree_path" = "$MAIN_WORKTREE" ]; then
-    display_label="[main]"
+for branch in "${ALL_BRANCHES[@]}"; do
+  if [ -n "${WORKTREE_BRANCHES[$branch]:-}" ]; then
+    # Branch has a worktree
+    worktree_path="${WORKTREE_BRANCHES[$branch]}"
+
+    if [ "$worktree_path" = "$MAIN_WORKTREE" ]; then
+      display_label="[main]"
+    else
+      display_label=$(basename "$worktree_path")
+    fi
+
+    DISPLAY_LIST+="WORKTREE|$worktree_path|$branch|$display_label"$'\n'
+    WORKTREE_COUNT=$((WORKTREE_COUNT + 1))
   else
-    display_label=$(basename "$worktree_path")
+    # Branch without worktree
+    DISPLAY_LIST+="BRANCH|$branch|$branch|[no worktree]"$'\n'
+    BRANCH_COUNT=$((BRANCH_COUNT + 1))
   fi
-
-  DISPLAY_LIST+="$worktree_path|$branch_name|$display_label"$'\n'
 done
 
 # Remove trailing newline
 DISPLAY_LIST="${DISPLAY_LIST%$'\n'}"
 
-echo "Found ${#WORKTREE_PATHS[@]} worktree(s) for project: $PROJECT_NAME" >&2
+echo "Found $WORKTREE_COUNT worktree(s) and $BRANCH_COUNT branch(es) without worktrees" >&2
 echo >&2
 
-# Use fzf to select a worktree
+# Use fzf to select a worktree or branch
 SELECTED=$(echo "$DISPLAY_LIST" | fzf \
   --height=100% \
   --border \
   --delimiter="|" \
-  --with-nth=2,3 \
-  --prompt="Select worktree: " \
-  --preview="ls -la {1} | head -20" \
+  --with-nth=3,4 \
+  --prompt="Select worktree/branch: " \
+  --preview='
+    TYPE=$(echo {} | cut -d"|" -f1)
+    if [ "$TYPE" = "WORKTREE" ]; then
+      PATH=$(echo {} | cut -d"|" -f2)
+      echo "=== EXISTING WORKTREE ==="
+      echo ""
+      ls -la "$PATH" | head -20
+    else
+      BRANCH=$(echo {} | cut -d"|" -f2)
+      echo "=== BRANCH WITHOUT WORKTREE ==="
+      echo ""
+      echo "Branch: $BRANCH"
+      echo "Will create worktree with git-worktree-add"
+      echo ""
+      echo "Recent commits:"
+      git log --oneline -5 "$BRANCH" 2>/dev/null || echo "No commits found"
+    fi
+  ' \
   --preview-window=right:50%:wrap \
-  --header="Navigate to worktree (ESC to cancel)")
+  --header="Navigate to worktree or create new one (ESC to cancel)")
 
 # Check if user cancelled
 if [ -z "$SELECTED" ]; then
   exit 0
 fi
 
-# Extract the path and branch name from the selection
-SELECTED_PATH=$(echo "$SELECTED" | cut -d'|' -f1)
-BRANCH_NAME=$(echo "$SELECTED" | cut -d'|' -f2)
+# Extract type and path/branch from selection
+SELECTED_TYPE=$(echo "$SELECTED" | cut -d'|' -f1)
+SELECTED_VALUE=$(echo "$SELECTED" | cut -d'|' -f2)
+BRANCH_NAME=$(echo "$SELECTED" | cut -d'|' -f3)
+
+if [ "$SELECTED_TYPE" = "BRANCH" ]; then
+  # Branch without worktree - create it first
+  echo "Creating worktree for branch: $BRANCH_NAME" >&2
+
+  # Check if git-worktree-add exists
+  if [ ! -x "$HOME/dotfiles/bin/git-worktree-add" ]; then
+    echo "Error: git-worktree-add not found" >&2
+    exit 1
+  fi
+
+  # Create the worktree (automatically, no prompts for tmux sessionizer)
+  # We need to compute the path that git-worktree-add will create
+  source "$HOME/dotfiles/bin/git-worktree-add" 2>/dev/null || true
+
+  # Import the shorten_branch_name function
+  shorten_branch_name() {
+    local branch=$1
+    local max_length=30
+    local sanitized="${branch//\//_}"
+    sanitized="${sanitized//./-}"
+    if [ ${#sanitized} -le $max_length ]; then
+      echo "$sanitized"
+      return
+    fi
+    if [[ "$sanitized" == *_* ]]; then
+      local prefix="${sanitized%%_*}"
+      local rest="${sanitized#*_}"
+      local prefix_len=${#prefix}
+      local remaining=$((max_length - prefix_len - 1))
+      if [ ${#rest} -gt $remaining ]; then
+        local take_start=$((remaining - 8))
+        local shortened="${rest:0:$take_start}--${rest: -6}"
+        echo "${prefix}_${shortened}"
+      else
+        echo "$sanitized"
+      fi
+    else
+      local shortened="${sanitized:0:22}--${sanitized: -6}"
+      echo "$shortened"
+    fi
+  }
+
+  WORKTREE_DIR_NAME=$(shorten_branch_name "$BRANCH_NAME")
+  SELECTED_PATH="$WORKTREE_BASE/$WORKTREE_DIR_NAME"
+
+  # Create the worktree if it doesn't exist
+  if [ ! -d "$SELECTED_PATH" ]; then
+    # Create directory structure
+    mkdir -p "$(dirname "$SELECTED_PATH")"
+
+    # Check if branch exists, create if needed
+    if ! git rev-parse --verify "$BRANCH_NAME" >/dev/null 2>&1; then
+      # Branch doesn't exist, create it from current HEAD
+      git branch "$BRANCH_NAME" HEAD
+    fi
+
+    # Create the worktree
+    git worktree add "$SELECTED_PATH" "$BRANCH_NAME"
+
+    # Copy environment files
+    for file in .tool-versions .env .envrc; do
+      [ -f "$file" ] && cp "$file" "$SELECTED_PATH"
+    done
+  fi
+else
+  # Existing worktree
+  SELECTED_PATH="$SELECTED_VALUE"
+fi
 
 # Create a custom session name: project@branch
 # Sanitize branch name for tmux (replace / with _ and . with -)

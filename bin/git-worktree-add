@@ -20,6 +20,13 @@ fi
 WORKTREE_BRANCH=$1
 BASE_BRANCH=${2:-$(git rev-parse --abbrev-ref HEAD)}
 PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
+WORKTREE_BASE=~/worktrees/$PROJECT_NAME
+
+if [ "${GIT_WORKTREE_ADD_PRINT_PATH:-}" = "1" ]; then
+  # When used by git-cd, emit only the final path on stdout.
+  exec 3>&1 1>&2
+  PRINT_PATH_FD=3
+fi
 
 # Shorten branch name for directory path (useful for long auto-generated names)
 # Also sanitizes slashes and dots to avoid filesystem issues
@@ -65,11 +72,21 @@ shorten_branch_name() {
   fi
 }
 
-WORKTREE_DIR_NAME=$(shorten_branch_name "$WORKTREE_BRANCH")
-WORKTREE_PATH=~/worktree/$PROJECT_NAME/$WORKTREE_DIR_NAME
+SUGGESTED_DIR_NAME=$(shorten_branch_name "$WORKTREE_BRANCH")
+
+echo
+read -e -p "Worktree directory name: " -i "$SUGGESTED_DIR_NAME" WORKTREE_DIR_NAME
+WORKTREE_DIR_NAME=${WORKTREE_DIR_NAME:-$SUGGESTED_DIR_NAME}
+
+if [[ "$WORKTREE_DIR_NAME" == /* || "$WORKTREE_DIR_NAME" == ~* ]]; then
+  WORKTREE_PATH="$WORKTREE_DIR_NAME"
+else
+  WORKTREE_PATH="$WORKTREE_BASE/$WORKTREE_DIR_NAME"
+fi
 
 echo
 echo "Branch: $WORKTREE_BRANCH"
+echo "Worktree base: $WORKTREE_BASE"
 echo "Worktree path: $WORKTREE_PATH"
 echo
 
@@ -152,5 +169,9 @@ echo "  Path: $WORKTREE_PATH"
 echo
 echo "To switch to the worktree, run:"
 echo "  cd $WORKTREE_PATH"
+
+if [ -n "${PRINT_PATH_FD:-}" ]; then
+  echo "$WORKTREE_PATH" >&"$PRINT_PATH_FD"
+fi
 
 exit 0

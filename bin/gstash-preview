@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# Quick, isolated test harness for the gstash-search preview logic.
+# Usage: ./scripts/gstash-preview-test.sh stash@{0} 12
+
+set -euo pipefail
+
+stash="${1:-stash@{0}}"
+linenum="${2:-1}"
+# Extract first number from linenum (nl output has leading spaces)
+line=$(echo "$linenum" | awk '{print $1}')
+line="${line:-1}"
+
+info=$(git stash list --format="%gd | %cr | %s" | grep -F "^${stash} " || true)
+file=$(git stash show -p "$stash" --no-color | \
+  awk -v target="$line" 'NR<=target && /^\+\+\+ b\//{f=$2} END{sub(/^\+\+\+ b\//,"",f); print f}')
+
+start=$(( line>3 ? line-3 : 1 ))
+end=$(( line+20 ))
+
+echo "Stash: ${info:-$stash}"
+echo "File: ${file:-unknown}"
+git stash show -p "$stash" --color=always | sed -n "${start},${end}p"
+

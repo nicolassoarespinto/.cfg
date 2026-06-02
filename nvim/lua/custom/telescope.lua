@@ -5,15 +5,21 @@ require('telescope').setup {
     defaults = {
         mappings = {
             -- Use <C-l> for vertical splits and disable the default <C-v> binding
-            i = { ['<C-l>'] = actions.select_vertical, ['<C-v>'] = false },
-            n = { ['<C-l>'] = actions.select_vertical, ['<C-v>'] = false },
+            i = { ['<C-l>'] = actions.select_vertical, ['<C-v>'] = false,
+                ["<C-Down>"] = require('telescope.actions').cycle_history_next,
+                ["<C-Up>"] = require('telescope.actions').cycle_history_prev,
+            },
+            n = { ['<C-l>'] = actions.select_vertical, ['<C-v>'] = false,
+                ["<C-Down>"] = require('telescope.actions').cycle_history_next,
+                ["<C-Up>"] = require('telescope.actions').cycle_history_prev,
+            },
         },
     },
     extensions = {
         fzf = {},
         history = {
             path = vim.fs.joinpath(data, "telescope_history.sqlite3"),
-            limit = 100,
+            limit = 1000,
         },
     }
 }
@@ -25,8 +31,10 @@ pcall(require('telescope').load_extension('smart_history'))
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>ff',
     function()
+        local ignore_patterns = { "miniconda", "anaconda", "node_modules", ".venv", ".json", ".parquet", ".pyc" }
         builtin.find_files({
             follow = false,
+            file_ignore_patterns = ignore_patterns,
             path_display = { "absolute" }
         })
     end)
@@ -41,7 +49,7 @@ vim.keymap.set('n', '<leader>f[',
 -- Search from home directorey
 vim.keymap.set('n', '<leader>f.',
     function()
-        local ignore_patterns = { "miniconda", "anaconda" }
+        local ignore_patterns = { "miniconda", "anaconda", "node_modules", ".venv", ".json", ".parquet", ".pyc" }
         local opts = {
             cwd = vim.fn.expand("$HOME"),
             hidden = false,
@@ -62,7 +70,7 @@ end
 vim.keymap.set('n', '<leader>fg',
     function()
         builtin.live_grep({
-            file_ignore_patterns = {"node_modules", ".git", ".venv", "miniconda3"}
+            file_ignore_patterns = { "node_modules", ".git", ".venv", "miniconda3", ".json", ".parquet", ".pyc" }
         })
     end)
 
