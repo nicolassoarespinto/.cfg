@@ -96,5 +96,77 @@ return {
             })
             require('telescope').load_extension('advanced_git_search')
         end,
-    }
+    },
+    {
+        "esmuellert/codediff.nvim",
+        cmd = "CodeDiff",
+        keys = {
+        {
+            '<leader>gD',
+            function()
+                local branches = {}
+                require('telescope.builtin').git_branches({
+                    attach_mappings = function(prompt_bufnr, map)
+                        local actions = require('telescope.actions')
+                        local action_state = require('telescope.actions.state')
+                        actions.select_default:replace(function()
+                            local selection = action_state.get_selected_entry()
+                            if not selection then return end
+                            local branch = selection.name
+                            actions.close(prompt_bufnr)
+                            if #branches == 0 then
+                                table.insert(branches, branch)
+                                -- pick the second branch
+                                require('telescope.builtin').git_branches({
+                                    attach_mappings = function(prompt_bufnr2, _)
+                                        actions.select_default:replace(function()
+                                            local sel2 = action_state.get_selected_entry()
+                                            if not sel2 then return end
+                                            actions.close(prompt_bufnr2)
+                                            vim.cmd('CodeDiff ' .. branches[1] .. '...' .. sel2.name)
+                                        end)
+                                        return true
+                                    end,
+                                    prompt_title = 'Target branch (will diff ' .. branch .. '...TARGET)',
+                                })
+                            end
+                        end)
+                        return true
+                    end,
+                    prompt_title = 'Base branch',
+                })
+            end,
+            desc = 'CodeDiff: branch pair diff',
+        },
+        { '<leader>gh', '<cmd>CodeDiff history %<cr>', desc = 'CodeDiff: file history' },
+    },
+    opts = {
+        keymaps = {
+            view = {
+                quit = "<C-q>",
+                next_hunk = "]g",
+                prev_hunk = "[g",
+                next_file = "]f",
+                prev_file = "[f",
+            },
+        },
+    },
+    config = function(_, opts)
+        require('codediff').setup(opts)
+        -- extra file navigation aliases applied after the diff view opens
+        vim.api.nvim_create_autocmd('User', {
+            pattern = 'CodeDiffOpen',
+            callback = function(ev)
+                local tabpage = ev.data and ev.data.tabpage or vim.api.nvim_get_current_tabpage()
+                for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tabpage)) do
+                    local buf = vim.api.nvim_win_get_buf(win)
+                    vim.keymap.set('n', '<M-j>', function() require('codediff').next_file() end,
+                        { buffer = buf, silent = true, desc = 'CodeDiff: next file' })
+                    vim.keymap.set('n', '<M-k>', function() require('codediff').prev_file() end,
+                        { buffer = buf, silent = true, desc = 'CodeDiff: prev file' })
+                end
+            end,
+        })
+    end,
+}
 }
