@@ -138,6 +138,42 @@ return {
             end,
             desc = 'CodeDiff: branch pair diff',
         },
+        {
+            '<leader>gC',
+            function()
+                local commits = {}
+                require('telescope.builtin').git_commits({
+                    attach_mappings = function(prompt_bufnr, _)
+                        local actions = require('telescope.actions')
+                        local action_state = require('telescope.actions.state')
+                        actions.select_default:replace(function()
+                            local selection = action_state.get_selected_entry()
+                            if not selection then return end
+                            local commit = selection.value
+                            actions.close(prompt_bufnr)
+                            if #commits == 0 then
+                                table.insert(commits, commit)
+                                require('telescope.builtin').git_commits({
+                                    attach_mappings = function(prompt_bufnr2, _)
+                                        actions.select_default:replace(function()
+                                            local sel2 = action_state.get_selected_entry()
+                                            if not sel2 then return end
+                                            actions.close(prompt_bufnr2)
+                                            vim.cmd('CodeDiff ' .. commits[1] .. ' ' .. sel2.value)
+                                        end)
+                                        return true
+                                    end,
+                                    prompt_title = 'Second commit (diff ' .. commit:sub(1, 7) .. ' → TARGET)',
+                                })
+                            end
+                        end)
+                        return true
+                    end,
+                    prompt_title = 'First commit (base)',
+                })
+            end,
+            desc = 'CodeDiff: commit pair diff',
+        },
         { '<leader>gh', '<cmd>CodeDiff history %<cr>', desc = 'CodeDiff: file history' },
     },
     opts = {
