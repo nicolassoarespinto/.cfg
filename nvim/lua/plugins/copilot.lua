@@ -52,5 +52,19 @@ return {
     --             vim.cmd("nohlsearch")
     --     end
     -- end, { desc = "Clear Copilot suggestion or fallback" })
+    local active = true
+    vim.keymap.set("n", "<leader>co", function()
+      if active then
+        require("copilot.command").disable()
+        vim.g.blink_cmp_copilot_enabled = false
+        active = false
+        vim.notify("Copilot disabled", vim.log.levels.INFO)
+      else
+        require("copilot.command").enable()
+        vim.g.blink_cmp_copilot_enabled = true
+        active = true
+        vim.notify("Copilot enabled", vim.log.levels.INFO)
+      end
+    end, { desc = "Toggle Copilot", silent = true })
 end,
 }
