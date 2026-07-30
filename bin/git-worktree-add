@@ -19,8 +19,17 @@ fi
 
 WORKTREE_BRANCH=$1
 BASE_BRANCH=${2:-$(git rev-parse --abbrev-ref HEAD)}
-PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
-WORKTREE_BASE=~/worktrees/$PROJECT_NAME
+
+# Resolve the project's main worktree via the common git dir, not the
+# toplevel of the current checkout. --show-toplevel returns whichever
+# worktree we happen to be standing in, so running this script from inside
+# an existing worktree would nest new worktrees under that worktree's own
+# name instead of the project's. --git-common-dir always points at the
+# main repo's .git directory regardless of which worktree is current.
+MAIN_GIT_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
+PROJECT_NAME=$(basename "$(dirname "$MAIN_GIT_DIR")")
+WORKTREE_BASE_ROOT=${GIT_WORKTREE_BASE:-~/worktrees}
+WORKTREE_BASE=${WORKTREE_BASE_ROOT%/}/$PROJECT_NAME
 
 if [ "${GIT_WORKTREE_ADD_PRINT_PATH:-}" = "1" ]; then
   # When used by git-cd, emit only the final path on stdout.

@@ -19,8 +19,12 @@ if ! git rev-parse --git-dir >/dev/null 2>&1; then
   exit 1
 fi
 
-PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
-MAIN_WORKTREE=$(git rev-parse --show-toplevel)
+# --git-common-dir always points at the main repo's .git directory, even
+# when run from inside a linked worktree, so this correctly identifies the
+# main worktree regardless of where git-cd is invoked from.
+MAIN_GIT_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
+MAIN_WORKTREE=$(dirname "$MAIN_GIT_DIR")
+PROJECT_NAME=$(basename "$MAIN_WORKTREE")
 CURRENT_DIR=$(pwd)
 
 # Get all existing worktrees
