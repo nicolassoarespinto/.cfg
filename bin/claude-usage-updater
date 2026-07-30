@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Background daemon for claude-usage: keeps the ccusage block cache warm so
+# the popup can render instantly instead of blocking on a fresh ccusage run.
+# Started (if not already running) by claude-usage; keeps going after the
+# popup closes so the next open is always instant.
+
+CACHE_DIR="$HOME/.cache/claude-usage"
+mkdir -p "$CACHE_DIR"
+BLOCK_CACHE="$CACHE_DIR/block.txt"
+
+while true; do
+  ccusage blocks --active --offline --color | tail -n +8 >"$BLOCK_CACHE.tmp" \
+    && mv "$BLOCK_CACHE.tmp" "$BLOCK_CACHE"
+  sleep 30
+done

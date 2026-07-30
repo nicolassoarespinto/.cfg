@@ -1,21 +1,59 @@
 #!/usr/bin/env bash
 
 # Live Claude Code usage dashboard: real session/week quota (from claude-statusline's
-# cache of Anthropic's rate_limits) plus local token/burn-rate stats (from ccusage).
+# cache of Anthropic's rate_limits) plus local token/burn-rate stats (from ccusage,
+# kept warm by claude-usage-updater so this renders instantly).
 command -v ccusage &>/dev/null || bun add -g ccusage
 
-RATE_LIMITS_CACHE="$HOME/.cache/claude-usage/rate_limits.json"
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+CACHE_DIR="$HOME/.cache/claude-usage"
+RATE_LIMITS_CACHE="$CACHE_DIR/rate_limits.json"
+BLOCK_CACHE="$CACHE_DIR/block.txt"
+UPDATER_PIDFILE="$CACHE_DIR/updater.pid"
 
-# Draw a [#####.....] NN% bar. Args: used_percentage
+# Kanagawa-ish palette, consistent with claude-statusline
+green='\033[38;5;151m'   # springGreen — safe
+yellow='\033[38;5;179m'  # carpYellow — warning
+red='\033[38;5;167m'     # autumnRed — danger
+gray='\033[38;5;240m'    # sumi_ink — dim text
+bold='\033[1m'
+reset='\033[0m'
+
+# Ensure the cache-warming daemon is running, starting it if not.
+ensure_updater() {
+  mkdir -p "$CACHE_DIR"
+  if [ -f "$UPDATER_PIDFILE" ] && kill -0 "$(cat "$UPDATER_PIDFILE")" 2>/dev/null; then
+    return
+  fi
+  nohup "$SCRIPT_DIR/claude-usage-updater" >/dev/null 2>&1 &
+  disown
+  echo $! >"$UPDATER_PIDFILE"
+}
+
+# Color for a given used-percentage: green < 50, yellow < 80, red >= 80.
+color_for() {
+  local pct=$1
+  if ((pct >= 80)); then
+    echo "$red"
+  elif ((pct >= 50)); then
+    echo "$yellow"
+  else
+    echo "$green"
+  fi
+}
+
+# Draw a [#####.....] NN% bar, colored by severity. Args: used_percentage
 bar() {
   local pct=$1 width=30
+  local color=$(color_for "$pct")
   local filled=$((pct * width / 100))
   ((filled > width)) && filled=$width
   local empty=$((width - filled))
-  printf '['
+  printf '%b[' "$color"
   printf '%0.s#' $(seq 1 "$filled") 2>/dev/null
+  printf '%b' "$gray"
   printf '%0.s.' $(seq 1 "$empty") 2>/dev/null
-  printf '] %3d%%' "$pct"
+  printf '%b]%b %b%3d%%%b' "$reset" "$color" "$bold" "$pct" "$reset"
 }
 
 # Human-readable countdown to a unix epoch. Args: resets_at
@@ -28,7 +66,7 @@ until_reset() {
 
 render_rate_limits() {
   if [ ! -f "$RATE_LIMITS_CACHE" ]; then
-    echo "(no rate-limit data yet — open any Claude Code session to populate it)"
+    printf '%b(no rate-limit data yet — open any Claude Code session to populate it)%b\n' "$gray" "$reset"
     return
   fi
 
@@ -39,15 +77,15 @@ render_rate_limits() {
   seven_day_reset=$(jq -r '.seven_day.resets_at // empty' "$RATE_LIMITS_CACHE")
 
   if [ -n "$five_hour_pct" ]; then
-    printf 'Session (5h)  '
+    printf '%bSession (5h)%b  ' "$bold" "$reset"
     bar "${five_hour_pct%.*}"
-    [ -n "$five_hour_reset" ] && printf '  (resets in %s)' "$(until_reset "$five_hour_reset")"
+    [ -n "$five_hour_reset" ] && printf '%b  (resets in %s)%b' "$gray" "$(until_reset "$five_hour_reset")" "$reset"
     echo
   fi
   if [ -n "$seven_day_pct" ]; then
-    printf 'Week (7d)     '
+    printf '%bWeek (7d)   %b  ' "$bold" "$reset"
     bar "${seven_day_pct%.*}"
-    [ -n "$seven_day_reset" ] && printf '  (resets in %s)' "$(until_reset "$seven_day_reset")"
+    [ -n "$seven_day_reset" ] && printf '%b  (resets in %s)%b' "$gray" "$(until_reset "$seven_day_reset")" "$reset"
     echo
   fi
 }
@@ -55,15 +93,21 @@ render_rate_limits() {
 tput civis
 trap 'tput cnorm' EXIT
 
+ensure_updater
+
 clear
 while true; do
   tput cup 0 0
   render_rate_limits
   echo
-  ccusage blocks --active --offline | tail -n +8
+  if [ -f "$BLOCK_CACHE" ]; then
+    cat "$BLOCK_CACHE"
+  else
+    printf '%b(warming up local usage stats…)%b\n' "$gray" "$reset"
+  fi
   echo
-  echo "Refreshing every 30s — press any key to refresh now, q to close"
+  printf '%bRefreshing every 5s — press any key to refresh now, q to close%b\n' "$gray" "$reset"
   tput ed
-  read -rt 30 -n 1 key
+  read -rt 5 -n 1 key
   [[ "$key" == "q" ]] && break
 done
