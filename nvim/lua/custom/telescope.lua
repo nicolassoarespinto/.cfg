@@ -27,6 +27,7 @@ require('telescope').setup {
 pcall(require('telescope').load_extension('file_browser'))
 pcall(require('telescope').load_extension('fzf'))
 pcall(require('telescope').load_extension('smart_history'))
+pcall(require('telescope').load_extension('scratch'))
 
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>ff',
@@ -81,6 +82,12 @@ end, { desc = 'Zoxide picker' })
 vim.keymap.set('n', '<leader>gw', function()
     require("custom.telescope.worktrees").pick()
 end, { desc = 'Switch git worktree' })
+vim.keymap.set('n', '<leader>fS', function()
+    require("custom.telescope.scratch").files()
+end, { desc = 'Scratch Files' })
+vim.keymap.set('n', '<leader>fSg', function()
+    require("custom.telescope.scratch").grep()
+end, { desc = 'Scratch Grep' })
 vim.keymap.set('n', '<leader>ffg', builtin.git_files, {})
 vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
@@ -89,7 +96,7 @@ vim.keymap.set('n', '<leader>fs', builtin.lsp_references, {})
 vim.keymap.set('n', '<leader>ffj', builtin.git_status, {})
 vim.keymap.set('n', '<leader>f]',
     function()
-        local opts = { previewer = false }
+        local opts = { previewer = false, include_extensions = true }
         builtin.builtin(opts)
     end
 )
