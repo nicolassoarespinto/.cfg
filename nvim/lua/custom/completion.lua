@@ -76,8 +76,9 @@ local opts = {
             name = "Copilot",
             module = "blink-copilot",
             enabled = function()
-                local flag = vim.g.blink_cmp_copilot_enabled --[[@as boolean?]]
-                return flag == nil or flag
+                -- Copilot is disabled by default; only enabled explicitly via
+                -- <leader>co or :ToggleAI (see nvim/plugin/ai.lua).
+                return vim.g.blink_cmp_copilot_enabled == true
             end,
             -- max_completions=5,
             -- score_offset = 100,

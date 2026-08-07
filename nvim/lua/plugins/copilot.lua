@@ -52,7 +52,11 @@ return {
     --             vim.cmd("nohlsearch")
     --     end
     -- end, { desc = "Clear Copilot suggestion or fallback" })
-    local active = true
+
+    -- Copilot is disabled by default; explicitly enable it with <leader>co when wanted.
+    require("copilot.command").disable()
+    vim.g.blink_cmp_copilot_enabled = false
+    local active = false
     vim.keymap.set("n", "<leader>co", function()
       if active then
         require("copilot.command").disable()
