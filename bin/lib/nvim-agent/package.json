@@ -1,0 +1,9 @@
+{
+  "name": "nvim-agent",
+  "version": "1.0.0",
+  "scripts": {},
+  "type": "module",
+  "dependencies": {
+    "@toon-format/toon": "4.1.1"
+  }
+}

@@ -1,103 +1,342 @@
 #!/usr/bin/env bash
-# Small RPC wrapper for a Neovim instance started with --listen.
+# AXI-compliant CLI for agents to interact with a Neovim instance started
+# with `nvim --listen SOCKET` (see herdr-nvim-server). Talks over
+# `nvim --remote-expr`/`--remote-send`; renders structured output as TOON.
 set -euo pipefail
 
-server="${NVIM_AGENT_SERVER:-/tmp/nvim-agent.sock}"
+VERSION="1.0.0"
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+LIB_DIR="$(dirname "$SELF")/lib/nvim-agent"
 
-usage() {
-    cat <<'EOF'
-Usage:
-  nvim-agent [--server SOCKET] quickfix [--title TITLE] [--no-open] FILE[:LINE]...
-  nvim-agent [--server SOCKET] codediff [CODEDIFF-ARGS...]
-  nvim-agent [--server SOCKET] lua LUA-CHUNK
+# ---- fast paths (no server contact needed) ---------------------------------
 
-Examples:
-  nvim-agent --server /tmp/nvim.sock quickfix src/app.py:42 README.md
-  nvim-agent --server /tmp/nvim.sock codediff main feat/retail-datasets
-  nvim-agent --server /tmp/nvim.sock lua "vim.cmd('copen')"
+case "${1:-}" in
+    -v|-V|--version)
+        echo "$VERSION"
+        exit 0
+        ;;
+esac
 
-Set NVIM_AGENT_SERVER to avoid passing --server on every call.
-EOF
+if [[ ! -d "$LIB_DIR/node_modules" ]]; then
+    # Plain text, not TOON: the encoder itself is what's missing.
+    echo "error: nvim-agent's TOON encoder isn't installed"
+    echo "help: run \`npm install --prefix $LIB_DIR\` once, then retry"
+    exit 1
+fi
+
+# ---- output helpers ---------------------------------------------------------
+
+toon() {
+    node "$LIB_DIR/toon-encode.mjs"
 }
 
+# Prints a structured error to stdout (never stderr — agents read stdout) and
+# exits. $1 = error message, $2 = help line, $3 = exit code (default 1).
+fail() {
+    local error="$1" help="${2:-}" code="${3:-1}"
+    if [[ -n "$help" ]]; then
+        jq -n --arg error "$error" --arg help "$help" '{error: $error, help: $help}' | toon
+    else
+        jq -n --arg error "$error" '{error: $error}' | toon
+    fi
+    exit "$code"
+}
+
+# ---- server discovery --------------------------------------------------------
+
+resolve_server() {
+    if [[ -n "${server_flag:-}" ]]; then
+        echo "$server_flag"
+        return
+    fi
+    if [[ -n "${NVIM_AGENT_SERVER:-}" ]]; then
+        echo "$NVIM_AGENT_SERVER"
+        return
+    fi
+    local workspace="${HERDR_PLUS_WORKSPACE_ID:-${HERDR_WORKSPACE_ID:-}}"
+    if [[ -z "$workspace" ]] && command -v herdr >/dev/null 2>&1; then
+        workspace=$(herdr api snapshot 2>/dev/null | jq -er '.result.snapshot.focused_workspace_id' 2>/dev/null) || workspace=""
+    fi
+    if [[ -z "$workspace" ]]; then
+        return 1
+    fi
+    echo "${XDG_RUNTIME_DIR:-/tmp}/nvim-agent-${workspace}.sock"
+}
+
+# ---- top-level flag parsing ---------------------------------------------------
+
+server_flag=""
 while [[ "${1:-}" == "--server" ]]; do
-    [[ "$#" -ge 2 ]] || { echo "--server needs a socket path." >&2; exit 2; }
-    server="$2"
+    [[ "$#" -ge 2 ]] || fail "--server needs a socket path" "nvim-agent --server SOCKET <command> ..." 2
+    server_flag="$2"
     shift 2
 done
 
 command="${1:-}"
-[[ -n "$command" ]] || { usage >&2; exit 2; }
-shift
+[[ "$#" -gt 0 ]] && shift || true
 
-if ! nvim --server "$server" --remote-expr '1' >/dev/null 2>&1; then
-    echo "Neovim server is unavailable: $server" >&2
-    exit 1
-fi
+TOP_HELP='bin: '"$SELF"'
+description: Agent eXperience Interface for a Neovim instance running --listen
 
-run_lua() {
-    local source="$1"
+Usage:
+  nvim-agent [--server SOCKET] <command> [args...]
+
+Commands:
+  state       show current buffer, cursor, open buffers, diagnostics
+  quickfix    populate and open the quickfix list
+  codediff    run :CodeDiff with the given arguments
+  lua         run a Lua chunk in the running instance
+  help        show this message
+
+Run `nvim-agent <command> --help` for command-specific help.
+Set NVIM_AGENT_SERVER, or rely on HerdR workspace discovery, to avoid
+passing --server on every call.'
+
+# ---- server liveness check (all real commands need it) -----------------------
+
+# Sets the global RESOLVED_SERVER on success. Must be called directly (not
+# via `x=$(require_server)`) so a failing `fail` call's exit/output aren't
+# swallowed by a command-substitution subshell.
+require_server() {
+    RESOLVED_SERVER=$(resolve_server) || fail \
+        "no Neovim server found for this workspace" \
+        "run herdr-nvim-server, or pass --server SOCKET / set NVIM_AGENT_SERVER" 1
+    if ! nvim --server "$RESOLVED_SERVER" --remote-expr '1' >/dev/null 2>&1; then
+        fail "Neovim server is unavailable: $RESOLVED_SERVER" "run herdr-nvim-server to start one" 1
+    fi
+}
+
+# Synchronous read: returns JSON straight from a luaeval() call.
+remote_eval_json() {
+    local server="$1" lua="$2"
+    local wrapped="vim.json.encode(($lua))"
+    local wrapped_json
+    wrapped_json=$(jq -Rn --arg s "$wrapped" '$s')
+    nvim --server "$server" --remote-expr "luaeval($wrapped_json)"
+}
+
+# Fire-and-forget mutation, scheduled + error-notified inside nvim so we never
+# block on textlock and failures surface as :messages instead of vanishing.
+remote_run_lua() {
+    local server="$1" source="$2"
     local source_json lua_expr lua_expr_json
     source_json=$(jq -Rn --arg source "$source" '$source')
     lua_expr="(function(source) vim.schedule(function() local chunk, err = load(source); if not chunk then vim.notify(err, vim.log.levels.ERROR, { title = 'nvim-agent' }); return end; local ok, result = pcall(chunk); if not ok then vim.notify(result, vim.log.levels.ERROR, { title = 'nvim-agent' }) end end); return 'queued' end)($source_json)"
     lua_expr_json=$(jq -Rn --arg expression "$lua_expr" '$expression')
-    nvim --server "$server" --remote-expr "luaeval($lua_expr_json)"
+    nvim --server "$server" --remote-expr "luaeval($lua_expr_json)" >/dev/null
+}
+
+STATE_LUA='(function()
+  local bufs = {}
+  for _, b in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(b) then
+      table.insert(bufs, {
+        bufnr = b,
+        name = vim.api.nvim_buf_get_name(b),
+        modified = vim.bo[b].modified,
+      })
+    end
+  end
+  local cur_buf = vim.api.nvim_get_current_buf()
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local diags = vim.diagnostic.get(nil)
+  local counts = { error = 0, warn = 0, info = 0, hint = 0 }
+  local names = { [1] = "error", [2] = "warn", [3] = "info", [4] = "hint" }
+  local preview = {}
+  for _, d in ipairs(diags) do
+    local sev = names[d.severity] or "info"
+    counts[sev] = counts[sev] + 1
+    if #preview < 3 then
+      table.insert(preview, {
+        file = vim.api.nvim_buf_get_name(d.bufnr),
+        line = d.lnum + 1,
+        severity = sev,
+        message = d.message,
+      })
+    end
+  end
+  return {
+    current_buffer = vim.api.nvim_buf_get_name(cur_buf),
+    filetype = vim.bo[cur_buf].filetype,
+    cursor = { line = cursor[1], col = cursor[2] },
+    buffers = bufs,
+    diagnostics = {
+      total = #diags,
+      errors = counts.error,
+      warnings = counts.warn,
+      preview = preview,
+    },
+  }
+end)()'
+
+cmd_state() {
+    local full_diagnostics=false
+    while [[ "${1:-}" == --* ]]; do
+        case "$1" in
+            --full-diagnostics) full_diagnostics=true; shift ;;
+            --help)
+                cat <<'EOF'
+nvim-agent state [--full-diagnostics]
+
+Show current buffer, cursor position, open buffers, and diagnostics as one
+aggregate read.
+
+  --full-diagnostics   include every diagnostic, not just the first 3
+
+Example:
+  nvim-agent state
+  nvim-agent state --full-diagnostics
+EOF
+                exit 0
+                ;;
+            *) fail "unknown flag $1 for \`state\`" "valid flags: --full-diagnostics (--help always allowed)" 2 ;;
+        esac
+    done
+    [[ "$#" -eq 0 ]] || fail "unknown argument: $1" "\`state\` takes no positional arguments" 2
+
+    require_server; local server="$RESOLVED_SERVER"
+    local raw; raw=$(remote_eval_json "$server" "$STATE_LUA")
+
+    if [[ "$full_diagnostics" == true ]]; then
+        local diag_lua="${STATE_LUA/preview = preview,/preview = diags,}"
+        raw=$(remote_eval_json "$server" "$diag_lua")
+    fi
+
+    local buf_count diag_total
+    buf_count=$(jq '.buffers | length' <<<"$raw")
+    diag_total=$(jq '.diagnostics.total' <<<"$raw")
+
+    jq --arg bufcount "$buf_count of $buf_count open" \
+       '{
+          current_buffer: .current_buffer,
+          filetype: .filetype,
+          cursor: .cursor,
+          buffer_count: $bufcount,
+          buffers: (.buffers | map({bufnr, name, modified})),
+          diagnostics: {
+            total: .diagnostics.total,
+            errors: .diagnostics.errors,
+            warnings: .diagnostics.warnings,
+            preview: (.diagnostics.preview | map({file, line, severity, message}))
+          }
+        }' <<<"$raw" | toon
+
+    if [[ "$full_diagnostics" != true && "$diag_total" -gt 3 ]]; then
+        jq -n --arg h "Run \`nvim-agent state --full-diagnostics\` to see all $diag_total diagnostics" \
+            '{help: [$h]}' | toon
+    fi
+}
+
+cmd_quickfix() {
+    local title="Quickfix" open=true
+    while [[ "${1:-}" == --* ]]; do
+        case "$1" in
+            --title)
+                [[ "$#" -ge 2 ]] || fail "--title needs text" "nvim-agent quickfix --title \"...\" FILE[:LINE]..." 2
+                title="$2"; shift 2 ;;
+            --no-open) open=false; shift ;;
+            --help)
+                cat <<'EOF'
+nvim-agent quickfix [--title TITLE] [--no-open] FILE[:LINE]...
+
+Populate the quickfix list with the given files (optionally file:line) and
+open it.
+
+  --title TITLE   quickfix list title (default: "Quickfix")
+  --no-open       populate the list without opening the quickfix window
+
+Example:
+  nvim-agent quickfix src/app.py:42 README.md
+  nvim-agent quickfix --title "Failing tests" --no-open test_foo.py:10
+EOF
+                exit 0
+                ;;
+            *) fail "unknown flag $1 for \`quickfix\`" "valid flags: --title, --no-open (--help always allowed)" 2 ;;
+        esac
+    done
+    [[ "$#" -gt 0 ]] || fail "quickfix needs at least one file" "nvim-agent quickfix FILE[:LINE]..." 2
+
+    require_server; local server="$RESOLVED_SERVER"
+    local payload
+    payload=$(jq -n --arg title "$title" '{ title: $title, items: [] }')
+    for target in "$@"; do
+        local file="$target" line=1
+        if [[ "$target" =~ ^(.+):([0-9]+)$ ]]; then
+            file="${BASH_REMATCH[1]}"
+            line="${BASH_REMATCH[2]}"
+        fi
+        payload=$(jq --arg file "$file" --argjson line "$line" \
+            '.items += [{ filename: $file, lnum: $line, text: "Agent-selected file" }]' <<<"$payload")
+    done
+    local payload_json lua
+    payload_json=$(jq -Rn --arg p "$payload" '$p')
+    lua="local payload = vim.json.decode($payload_json); vim.fn.setqflist({}, 'r', { title = payload.title, items = payload.items })"
+    $open && lua+="; vim.cmd('copen')"
+    remote_run_lua "$server" "$lua"
+
+    jq -n --arg title "$title" --argjson n "$#" \
+        '{quickfix: {title: $title, items: $n}, help: ["Run `nvim-agent state` to see the current buffer/cursor"]}' | toon
+}
+
+cmd_codediff() {
+    if [[ "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+nvim-agent codediff [CODEDIFF-ARGS...]
+
+Run :CodeDiff with the given arguments in the running instance.
+
+Example:
+  nvim-agent codediff main feat/retail-datasets
+EOF
+        exit 0
+    fi
+    require_server; local server="$RESOLVED_SERVER"
+    local codediff_args="$*"
+    nvim --server "$server" --remote-send "<Esc>:CodeDiff $codediff_args<CR>"
+    jq -n --arg args "$codediff_args" '{codediff: {args: $args, status: "sent"}}' | toon
+}
+
+cmd_lua() {
+    if [[ "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+nvim-agent lua LUA-CHUNK
+
+Run an arbitrary Lua chunk in the running instance. Runs scheduled; errors
+are reported via vim.notify inside Neovim, not on this command's stdout.
+
+Example:
+  nvim-agent lua "vim.cmd('copen')"
+EOF
+        exit 0
+    fi
+    [[ "$#" -gt 0 ]] || fail "lua needs a Lua chunk" "nvim-agent lua \"vim.cmd(...)\"" 2
+    require_server; local server="$RESOLVED_SERVER"
+    remote_run_lua "$server" "$*"
+    jq -n '{lua: {status: "queued"}}' | toon
 }
 
 case "$command" in
-    quickfix)
-        title="Quickfix"
-        open=true
-        while [[ "${1:-}" == --* ]]; do
-            case "$1" in
-                --title)
-                    [[ "$#" -ge 2 ]] || { echo "--title needs text." >&2; exit 2; }
-                    title="$2"
-                    shift 2
-                    ;;
-                --no-open)
-                    open=false
-                    shift
-                    ;;
-                *)
-                    echo "Unknown quickfix option: $1" >&2
-                    exit 2
-                    ;;
-            esac
-        done
-        [[ "$#" -gt 0 ]] || { echo "quickfix needs at least one file." >&2; exit 2; }
-
-        payload=$(jq -n --arg title "$title" '{ title: $title, items: [] }')
-        for target in "$@"; do
-            file="$target"
-            line=1
-            if [[ "$target" =~ ^(.+):([0-9]+)$ ]]; then
-                file="${BASH_REMATCH[1]}"
-                line="${BASH_REMATCH[2]}"
-            fi
-            payload=$(jq --arg file "$file" --argjson line "$line" \
-                '.items += [{ filename: $file, lnum: $line, text: "Agent-selected file" }]' <<<"$payload")
-        done
-        payload_json=$(jq -Rn --arg payload "$payload" '$payload')
-        lua="local payload = vim.fn.json_decode($payload_json); vim.fn.setqflist({}, 'r', { title = payload.title, items = payload.items })"
-        $open && lua+="; vim.cmd('copen')"
-        run_lua "$lua"
-        ;;
-    codediff)
-        codediff_args="$*"
-        nvim --server "$server" --remote-send \
-            "<Esc>:CodeDiff $codediff_args<CR>"
-        ;;
-    lua)
-        [[ "$#" -gt 0 ]] || { echo "lua needs a Lua chunk." >&2; exit 2; }
-        run_lua "$*"
+    state) cmd_state "$@" ;;
+    quickfix) cmd_quickfix "$@" ;;
+    codediff) cmd_codediff "$@" ;;
+    lua) cmd_lua "$@" ;;
+    "")
+        echo "bin: $SELF"
+        echo "description: Agent eXperience Interface for a Neovim instance running --listen"
+        server=$(resolve_server 2>/dev/null || true)
+        if [[ -n "$server" ]] && nvim --server "$server" --remote-expr '1' >/dev/null 2>&1; then
+            cmd_state
+        else
+            jq -n '{state: "no Neovim server found for this workspace"}' | toon
+            jq -n '{help: ["run herdr-nvim-server to start one", "or pass --server SOCKET / set NVIM_AGENT_SERVER"]}' | toon
+        fi
+        echo
+        echo "$TOP_HELP"
         ;;
     -h|--help|help)
-        usage
+        echo "$TOP_HELP"
         ;;
     *)
-        echo "Unknown command: $command" >&2
-        usage >&2
-        exit 2
+        fail "unknown command: $command" "commands: state, quickfix, codediff, lua (--help always allowed)" 2
         ;;
 esac
