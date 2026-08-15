@@ -52,6 +52,11 @@ return {
                 function() require('namu.namu_symbols').show() end,
                 desc = 'Symbols (Document)',
             },
+            {
+                '<leader>sw',
+                function() require('namu.namu_workspace').show() end,
+                desc = "LSP Symbols - Workspace",
+            },
         },
         opts = {
             namu_symbols = {

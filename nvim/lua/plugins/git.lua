@@ -105,7 +105,7 @@ return {
             '<leader>gD',
             function()
                 local branches = {}
-                require('telescope.builtin').git_branches({
+                require('custom.telescope.git_branches').pick({
                     attach_mappings = function(prompt_bufnr, map)
                         local actions = require('telescope.actions')
                         local action_state = require('telescope.actions.state')
@@ -117,7 +117,7 @@ return {
                             if #branches == 0 then
                                 table.insert(branches, branch)
                                 -- pick the second branch
-                                require('telescope.builtin').git_branches({
+                                require('custom.telescope.git_branches').pick({
                                     attach_mappings = function(prompt_bufnr2, _)
                                         actions.select_default:replace(function()
                                             local sel2 = action_state.get_selected_entry()

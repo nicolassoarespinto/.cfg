@@ -56,6 +56,6 @@ tmux set-window-option -g window-status-current-format "#[fg=${white},bg=${dark_
 tmux set-window-option -g window-status-format "#[fg=${white},bg=${gray}] #I #W "
 
 # Window style
-tmux set-window-option -g window-style "fg=${white},bg=${dark_gray}"
+tmux set-window-option -g window-style "fg=${white},bg=${sumi_ink_1}"
 tmux set-window-option -g window-status-activity-style "bold"
 tmux set-window-option -g window-status-bell-style "bold"

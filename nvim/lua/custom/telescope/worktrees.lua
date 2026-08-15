@@ -4,6 +4,7 @@ local conf = require("telescope.config").values
 local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 local entry_display = require("telescope.pickers.entry_display")
+local relative_date = require("custom.git_relative_date")
 
 -- Telescope picker for moving between existing git worktrees.
 -- Mirrors the "move only" half of the bin/git-cd bash helper: it never
@@ -41,6 +42,10 @@ local function list_worktrees()
 
   for _, wt in ipairs(worktrees) do
     wt.is_current = vim.fs.normalize(wt.path) == vim.fs.normalize(cwd)
+    if not wt.is_bare then
+      local log = vim.fn.systemlist({ "git", "-C", wt.path, "log", "-1", "--format=%ct" })
+      wt.commit_ts = vim.v.shell_error == 0 and tonumber(log[1]) or nil
+    end
   end
 
   return worktrees
@@ -81,6 +86,7 @@ local function worktrees_picker(opts)
     separator = "  ",
     items = {
       { width = 2 },
+      { width = 5 },
       { width = 30 },
       { remaining = true },
     },
@@ -92,6 +98,7 @@ local function worktrees_picker(opts)
     local label = wt.is_bare and "(bare)" or wt.is_detached and "(detached)" or (wt.branch or "?")
     return displayer({
       marker,
+      { wt.commit_ts and relative_date(wt.commit_ts) or "", "TelescopeResultsNumber" },
       { label, wt.is_current and "TelescopeResultsSpecialComment" or "TelescopeResultsIdentifier" },
       { wt.path, "TelescopeResultsComment" },
     })
