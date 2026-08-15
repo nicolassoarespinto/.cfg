@@ -1,0 +1,50 @@
+onboarding = false
+# herdr configuration
+#
+[theme]
+name = "gruvbox"
+
+auto_switch = false
+[terminal]
+default_shell = "/usr/bin/bash"
+
+[ui]
+show_agent_labels_on_pane_borders = true
+
+agent_panel_sort = "priority"
+
+[ui.toast]
+# In-app popups when an agent flips to blocked/done, so you don't have to
+# poll panes to notice. "herdr" keeps it in-app; "system"/"terminal" would
+# ask the OS/outer terminal for a native desktop notification instead.
+delivery = "herdr"
+
+[keys]
+prefix = "ctrl+b"
+
+detach = "prefix+d"
+
+split_vertical = "prefix+|"
+
+focus_pane_left = "ctrl+h"
+focus_pane_down = "ctrl+j"
+focus_pane_up = "ctrl+k"
+focus_pane_right = "ctrl+l"
+
+next_tab = "alt+right"
+previous_tab = "alt+left"
+
+next_workspace = "alt+down"
+previous_workspace = "alt+up"
+
+new_tab = "alt+shift+n"
+
+next_agent = "alt+n"
+previous_agent = "alt+p"
+
+open_notification_target = "alt+o"
+
+focus_agent = "prefix+alt+1..9"
+
+
+
