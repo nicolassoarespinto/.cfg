@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# Small RPC wrapper for a Neovim instance started with --listen.
+set -euo pipefail
+
+server="${NVIM_AGENT_SERVER:-/tmp/nvim-agent.sock}"
+
+usage() {
+    cat <<'EOF'
+Usage:
+  nvim-agent [--server SOCKET] quickfix [--title TITLE] [--no-open] FILE[:LINE]...
+  nvim-agent [--server SOCKET] codediff [CODEDIFF-ARGS...]
+  nvim-agent [--server SOCKET] lua LUA-CHUNK
+
+Examples:
+  nvim-agent --server /tmp/nvim.sock quickfix src/app.py:42 README.md
+  nvim-agent --server /tmp/nvim.sock codediff main feat/retail-datasets
+  nvim-agent --server /tmp/nvim.sock lua "vim.cmd('copen')"
+
+Set NVIM_AGENT_SERVER to avoid passing --server on every call.
+EOF
+}
+
+while [[ "${1:-}" == "--server" ]]; do
+    [[ "$#" -ge 2 ]] || { echo "--server needs a socket path." >&2; exit 2; }
+    server="$2"
+    shift 2
+done
+
+command="${1:-}"
+[[ -n "$command" ]] || { usage >&2; exit 2; }
+shift
+
+if ! nvim --server "$server" --remote-expr '1' >/dev/null 2>&1; then
+    echo "Neovim server is unavailable: $server" >&2
+    exit 1
+fi
+
+run_lua() {
+    local source="$1"
+    local source_json lua_expr lua_expr_json
+    source_json=$(jq -Rn --arg source "$source" '$source')
+    lua_expr="(function(source) vim.schedule(function() local chunk, err = load(source); if not chunk then vim.notify(err, vim.log.levels.ERROR, { title = 'nvim-agent' }); return end; local ok, result = pcall(chunk); if not ok then vim.notify(result, vim.log.levels.ERROR, { title = 'nvim-agent' }) end end); return 'queued' end)($source_json)"
+    lua_expr_json=$(jq -Rn --arg expression "$lua_expr" '$expression')
+    nvim --server "$server" --remote-expr "luaeval($lua_expr_json)"
+}
+
+case "$command" in
+    quickfix)
+        title="Quickfix"
+        open=true
+        while [[ "${1:-}" == --* ]]; do
+            case "$1" in
+                --title)
+                    [[ "$#" -ge 2 ]] || { echo "--title needs text." >&2; exit 2; }
+                    title="$2"
+                    shift 2
+                    ;;
+                --no-open)
+                    open=false
+                    shift
+                    ;;
+                *)
+                    echo "Unknown quickfix option: $1" >&2
+                    exit 2
+                    ;;
+            esac
+        done
+        [[ "$#" -gt 0 ]] || { echo "quickfix needs at least one file." >&2; exit 2; }
+
+        payload=$(jq -n --arg title "$title" '{ title: $title, items: [] }')
+        for target in "$@"; do
+            file="$target"
+            line=1
+            if [[ "$target" =~ ^(.+):([0-9]+)$ ]]; then
+                file="${BASH_REMATCH[1]}"
+                line="${BASH_REMATCH[2]}"
+            fi
+            payload=$(jq --arg file "$file" --argjson line "$line" \
+                '.items += [{ filename: $file, lnum: $line, text: "Agent-selected file" }]' <<<"$payload")
+        done
+        payload_json=$(jq -Rn --arg payload "$payload" '$payload')
+        lua="local payload = vim.fn.json_decode($payload_json); vim.fn.setqflist({}, 'r', { title = payload.title, items = payload.items })"
+        $open && lua+="; vim.cmd('copen')"
+        run_lua "$lua"
+        ;;
+    codediff)
+        codediff_args="$*"
+        nvim --server "$server" --remote-send \
+            "<Esc>:CodeDiff $codediff_args<CR>"
+        ;;
+    lua)
+        [[ "$#" -gt 0 ]] || { echo "lua needs a Lua chunk." >&2; exit 2; }
+        run_lua "$*"
+        ;;
+    -h|--help|help)
+        usage
+        ;;
+    *)
+        echo "Unknown command: $command" >&2
+        usage >&2
+        exit 2
+        ;;
+esac

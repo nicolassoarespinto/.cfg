@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Create a HerdR tab containing a Neovim server for agent-controlled views.
+set -euo pipefail
+
+workspace=""
+cwd=""
+
+usage() {
+    cat <<'EOF'
+Usage: herdr-nvim-server [--workspace ID] [--cwd PATH]
+
+Creates a focused "Nvim server" tab and prints its NVIM_AGENT_SERVER socket.
+EOF
+}
+
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --workspace)
+            [[ "$#" -ge 2 ]] || { echo "--workspace needs an ID." >&2; exit 2; }
+            workspace="$2"
+            shift 2
+            ;;
+        --cwd)
+            [[ "$#" -ge 2 ]] || { echo "--cwd needs a path." >&2; exit 2; }
+            cwd="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            usage >&2
+            exit 2
+            ;;
+    esac
+done
+
+workspace="${workspace:-${HERDR_PLUS_WORKSPACE_ID:-${HERDR_WORKSPACE_ID:-}}}"
+if [[ -z "$workspace" ]]; then
+    workspace=$(herdr api snapshot | jq -er '.result.snapshot.focused_workspace_id')
+fi
+
+cwd="${cwd:-${HERDR_PLUS_WORKDIR:-$PWD}}"
+repo_root=$(git -C "$cwd" rev-parse --show-toplevel) || {
+    echo "The current HerdR workspace is not in a Git repository." >&2
+    exit 2
+}
+
+socket="${XDG_RUNTIME_DIR:-/tmp}/nvim-agent-${workspace}.sock"
+if [[ -S "$socket" ]] && nvim --server "$socket" --remote-expr '1' >/dev/null 2>&1; then
+    printf 'Neovim server already running.\nNVIM_AGENT_SERVER=%q\n' "$socket"
+    exit 0
+fi
+
+tab_json=$(herdr tab create --workspace "$workspace" --cwd "$repo_root" \
+    --label "Nvim server" --focus)
+pane_id=$(jq -er '.result.root_pane.pane_id' <<<"$tab_json")
+launch_command=$(printf 'cd %q && exec nvim --listen %q' "$repo_root" "$socket")
+
+err_file=$(mktemp "${TMPDIR:-/tmp}/herdr-nvim-server.XXXXXX.err")
+trap 'rm -f "$err_file"' EXIT
+for _ in {1..20}; do
+    if herdr pane run "$pane_id" "$launch_command" 2>"$err_file"; then
+        printf 'Neovim server tab created.\nNVIM_AGENT_SERVER=%q\n' "$socket"
+        exit 0
+    fi
+    grep -q agent_pane_busy "$err_file" || break
+    sleep 0.2
+done
+
+cat "$err_file" >&2
+exit 1
