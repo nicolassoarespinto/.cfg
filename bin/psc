@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+ps -eo pid,comm,min_flt,maj_flt --sort=-maj_flt

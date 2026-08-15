@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+ps -eo pid,%mem,cmd,min_flt,maj_flt --sort=-%mem | head -n 15
