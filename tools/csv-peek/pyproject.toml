@@ -1,0 +1,14 @@
+[project]
+name = "csv-peek"
+version = "0.1.0"
+description = "Quick CSV preview with optional regex filtering"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["rich>=12.0"]
+
+[project.scripts]
+csv-peek = "csv_peek.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
