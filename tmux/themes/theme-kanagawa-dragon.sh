@@ -1,0 +1,1 @@
+/home/nicolas/dotfiles/tmux/themes/theme-dragon.sh

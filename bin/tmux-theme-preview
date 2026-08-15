@@ -1,0 +1,448 @@
+#!/usr/bin/env python3
+"""
+tmux-theme-preview: Visual gallery and live switcher for tmux themes.
+Supports ANSI truecolor rendering of status bars, prefix states, and color swatches.
+"""
+
+import sys
+import os
+import subprocess
+import argparse
+import re
+
+THEMES = {
+    "subtle": {
+        "title": "Kurogane Subtle (黒鉄・幽玄) - Minimalist & Low-Contrast",
+        "file": "theme-subtle.sh",
+        "description": "Ultra-clean typographic statusline with no heavy background blocks. Zero distraction.",
+        "vibes": "Minimalist • Seamless • Typographic • Pure Focus",
+        "colors": {
+            "bg_dark": "#121316",
+            "fg_primary": "#d8d6cd",
+            "fg_muted": "#636879",
+            "fg_dim": "#3a3e4c",
+            "ember": "#e57c58",
+            "ochre": "#dca561",
+            "moss": "#78997a",
+            "steel": "#688094",
+        },
+        "session_icon": "◆",
+        "session_prefix_icon": "⚡",
+        "session_badge": ("#dca561", "#121316"),
+        "session_prefix": ("#e57c58", "#121316"),
+        "active_tab": ("#e57c58", "#121316", "#d8d6cd", "#121316"),
+        "inactive_tab": ("#3a3e4c", "#636879", "#121316"),
+        "tab_divider": "#3a3e4c",
+        "right_items": [
+            ("#688094", "Sat 08/15"),
+            ("#78997a", "14:30"),
+        ],
+        "border_active": "#e57c58",
+        "border_inactive": "#3a3e4c",
+    },
+    "dragon": {
+        "title": "Kanagawa Dragon (金川 龍) - Canonical Neovim Dragon",
+        "file": "theme-dragon.sh",
+        "description": "Exact Neovim Kanagawa Dragon palette with charred earth background, dragon orange, and bamboo yellow.",
+        "vibes": "Dragon Earth • Bamboo Yellow • Charred Ink • Organic",
+        "colors": {
+            "bg_dark": "#181616",
+            "bg_surface": "#282727",
+            "bg_highlight": "#393836",
+            "fg_primary": "#c5c9c5",
+            "fg_muted": "#a6a69c",
+            "fg_dim": "#625e5a",
+            "dragon_orange": "#b6927b",
+            "dragon_yellow": "#c4b28a",
+            "dragon_green": "#8a9a7b",
+            "dragon_aqua": "#8ea4a2",
+            "dragon_red": "#c4746e",
+        },
+        "session_icon": "◆",
+        "session_prefix_icon": "⚡",
+        "session_badge": ("#c4b28a", "#181616"),
+        "session_prefix": ("#c4746e", "#181616"),
+        "active_tab": ("#b6927b", "#181616", "#c5c9c5", "#181616"),
+        "inactive_tab": ("#7a8382", "#a6a69c", "#181616"),
+        "tab_divider": "#625e5a",
+        "right_items": [
+            ("#8ea4a2", "Sat 08/15"),
+            ("#8a9a7b", "14:30"),
+        ],
+        "border_active": "#b6927b",
+        "border_inactive": "#393836",
+    },
+    "kurogane": {
+        "title": "Kurogane Classic (黒鉄) - Cast Iron & Ember Blocks",
+        "file": "theme-kurogane.sh",
+        "description": "Deep matte cast-iron base with crisp bone typography and solid ember pill tabs.",
+        "vibes": "Matte Cast Iron • Structured Tabs • Zero Glare",
+        "colors": {
+            "bg_dark": "#121316",
+            "bg_surface": "#1a1c22",
+            "bg_highlight": "#262933",
+            "fg_primary": "#d8d6cd",
+            "fg_muted": "#636879",
+            "fg_dim": "#484d5c",
+            "ember": "#e57c58",
+            "ochre": "#dca561",
+            "moss": "#78997a",
+            "steel_blue": "#688094",
+        },
+        "session_icon": "◆",
+        "session_prefix_icon": "⚡",
+        "session_badge": ("#121316", "#dca561"),
+        "session_prefix": ("#121316", "#e57c58"),
+        "active_tab": ("#121316", "#e57c58", "#d8d6cd", "#262933"),
+        "inactive_tab": ("#484d5c", "#636879", "#1a1c22"),
+        "tab_divider": None,
+        "right_items": [
+            ("#688094", "Sat 08/15"),
+            ("#78997a", "14:30"),
+        ],
+        "border_active": "#e57c58",
+        "border_inactive": "#262933",
+    },
+    "shinrin": {
+        "title": "Shinrin (森林) - Boreal Pine & Glacial Mist",
+        "file": "theme-shinrin.sh",
+        "description": "Deep spruce forest shadows with cool glacial frost text and lichen/copper functional accents.",
+        "vibes": "Organic • Evergreen Shadow • Glacial • Ultra Restful",
+        "colors": {
+            "bg_dark": "#101516",
+            "bg_surface": "#162022",
+            "bg_highlight": "#223336",
+            "fg_primary": "#cdd8d5",
+            "fg_muted": "#668285",
+            "fg_dim": "#3e5356",
+            "lichen": "#8bb68b",
+            "copper": "#d48c68",
+            "glacier": "#74aab3",
+            "dusk_violet": "#a292ad",
+        },
+        "session_icon": "◆",
+        "session_prefix_icon": "⚡",
+        "session_badge": ("#101516", "#8bb68b"),
+        "session_prefix": ("#101516", "#d48c68"),
+        "active_tab": ("#101516", "#74aab3", "#cdd8d5", "#223336"),
+        "inactive_tab": ("#3e5356", "#668285", "#162022"),
+        "tab_divider": None,
+        "right_items": [
+            ("#a292ad", "Sat 08/15"),
+            ("#74aab3", "14:30"),
+        ],
+        "border_active": "#74aab3",
+        "border_inactive": "#223336",
+    },
+    "kitsune": {
+        "title": "Kitsune (狐火) - Charred Ink & Autumn Ochre",
+        "file": "theme-kitsune.sh",
+        "description": "Smoky Japanese hearth and roasted espresso earthiness inspired by Kanagawa Dragon & Gruvbox.",
+        "vibes": "Warm Hearth • Earthy Dragon • Roasted Chestnut • Cozy",
+        "colors": {
+            "bg_dark": "#141312",
+            "bg_surface": "#1e1c19",
+            "bg_highlight": "#2c2824",
+            "fg_primary": "#dfd7cb",
+            "fg_muted": "#7a7065",
+            "fg_dim": "#4e463d",
+            "persimmon": "#e08238",
+            "vermilion": "#cf4f45",
+            "matcha": "#8e9d67",
+            "sand": "#c7a462",
+            "smoke_blue": "#6d838a",
+        },
+        "session_icon": "◆",
+        "session_prefix_icon": "⚡",
+        "session_badge": ("#141312", "#e08238"),
+        "session_prefix": ("#141312", "#cf4f45"),
+        "active_tab": ("#141312", "#c7a462", "#dfd7cb", "#2c2824"),
+        "inactive_tab": ("#4e463d", "#7a7065", "#1e1c19"),
+        "tab_divider": None,
+        "right_items": [
+            ("#6d838a", "Sat 08/15"),
+            ("#8e9d67", "14:30"),
+        ],
+        "border_active": "#e08238",
+        "border_inactive": "#2c2824",
+    },
+    "umbra": {
+        "title": "Umbra (深淵) - Abyssal Twilight & Amethyst",
+        "file": "theme-umbra.sh",
+        "description": "Pitch oceanic abyss with bioluminescent phosphor cyan, starlight silver, and dusk amethyst.",
+        "vibes": "Nocturne Abyss • Starlight Silver • Bioluminescent • High Precision",
+        "colors": {
+            "bg_dark": "#0f1118",
+            "bg_surface": "#161a25",
+            "bg_highlight": "#222838",
+            "fg_primary": "#ced4e2",
+            "fg_muted": "#636e86",
+            "fg_dim": "#41495c",
+            "amethyst": "#a78bfa",
+            "coral": "#f47280",
+            "marine_teal": "#5eead4",
+            "deep_blue": "#60a5fa",
+        },
+        "session_icon": "◆",
+        "session_prefix_icon": "⚡",
+        "session_badge": ("#0f1118", "#5eead4"),
+        "session_prefix": ("#0f1118", "#f47280"),
+        "active_tab": ("#0f1118", "#a78bfa", "#ced4e2", "#222838"),
+        "inactive_tab": ("#41495c", "#636e86", "#161a25"),
+        "tab_divider": None,
+        "right_items": [
+            ("#60a5fa", "Sat 08/15"),
+            ("#a78bfa", "14:30"),
+        ],
+        "border_active": "#a78bfa",
+        "border_inactive": "#223336",
+    },
+    "claude": {
+        "title": "Claude Twilight - Ocean Dusk & Lavender",
+        "file": "theme-claude.sh",
+        "description": "The ocean twilight theme previously configured in dotfiles.",
+        "vibes": "Twilight Ocean • Indigo • Soft Amber • Calm",
+        "colors": {
+            "bg_dark": "#1a1d2e",
+            "bg_surface": "#252836",
+            "bg_highlight": "#414561",
+            "fg_primary": "#e0def4",
+            "fg_muted": "#6c7086",
+            "amber": "#f6c177",
+            "lavender": "#c4a7e7",
+            "seafoam": "#9ccfd8",
+        },
+        "session_icon": "◆",
+        "session_prefix_icon": "◆",
+        "session_badge": ("#1a1d2e", "#f6c177"),
+        "session_prefix": ("#1a1d2e", "#ea9a97"),
+        "active_tab": ("#e0def4", "#414561", "#e0def4", "#414561"),
+        "inactive_tab": ("#6c7086", "#6c7086", "#252836"),
+        "tab_divider": None,
+        "right_items": [
+            ("#c4a7e7", "Sat 08/15"),
+            ("#9ccfd8", "14:30"),
+        ],
+        "border_active": "#c4a7e7",
+        "border_inactive": "#56949f",
+    }
+}
+
+RESET = "\033[0m"
+BOLD = "\033[1m"
+DIM = "\033[2m"
+
+def hex_to_rgb(hex_str):
+    hex_str = hex_str.lstrip('#')
+    return tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))
+
+def fg(hex_str):
+    r, g, b = hex_to_rgb(hex_str)
+    return f"\033[38;2;{r};{g};{b}m"
+
+def bg(hex_str):
+    r, g, b = hex_to_rgb(hex_str)
+    return f"\033[48;2;{r};{g};{b}m"
+
+def render_statusbar(theme_id, prefix_active=False):
+    t = THEMES[theme_id]
+    c = t["colors"]
+    bg_bar = c["bg_dark"]
+    is_subtle = (theme_id in ("subtle", "dragon"))
+    
+    # Left side (Session)
+    if is_subtle:
+        if prefix_active:
+            s_fg, _ = t["session_prefix"]
+            s_icon = t["session_prefix_icon"]
+            session_pill = f"{bg(bg_bar)}{fg(s_fg)}{BOLD} {s_icon} dotfiles {fg(c['fg_dim'])}│{RESET}"
+        else:
+            s_fg, _ = t["session_badge"]
+            s_icon = t["session_icon"]
+            session_pill = f"{bg(bg_bar)}{fg(s_fg)}{BOLD} {s_icon} dotfiles {fg(c['fg_dim'])}│{RESET}"
+    else:
+        if prefix_active:
+            s_fg, s_bg = t["session_prefix"]
+            s_icon = t["session_prefix_icon"]
+            session_pill = f"{bg(s_bg)}{fg(s_fg)}{BOLD} {s_icon} dotfiles {RESET}"
+        else:
+            s_fg, s_bg = t["session_badge"]
+            s_icon = t["session_icon"]
+            session_pill = f"{bg(s_bg)}{fg(s_fg)}{BOLD} {s_icon} dotfiles {RESET}"
+
+    # Tabs
+    # Tab 1 (Inactive)
+    in_num_fg, in_txt_fg, in_bg = t["inactive_tab"]
+    if is_subtle:
+        tab1 = f" {bg(in_bg)}{fg(in_num_fg)}1 {fg(in_txt_fg)}edit {fg(c['fg_dim'])}│{RESET}"
+    else:
+        tab1 = f" {bg(in_bg)}{fg(in_num_fg)} 1 {fg(in_txt_fg)}edit {RESET}"
+    
+    # Tab 2 (Active)
+    act_num_fg, act_num_bg, act_txt_fg, act_bg = t["active_tab"]
+    if is_subtle:
+        tab2 = f" {bg(act_bg)}{fg(act_num_fg)}{BOLD}2 {fg(act_txt_fg)}{BOLD}nvim {fg(c['fg_dim'])}│{RESET}"
+    else:
+        tab2 = f" {bg(act_num_bg)}{fg(act_num_fg)}{BOLD} 2 {bg(act_bg)}{fg(act_txt_fg)}{BOLD} nvim {RESET}"
+    
+    # Tab 3 (Inactive)
+    if is_subtle:
+        tab3 = f" {bg(in_bg)}{fg(in_num_fg)}3 {fg(in_txt_fg)}server {fg(c['fg_dim'])}│{RESET}"
+    else:
+        tab3 = f" {bg(in_bg)}{fg(in_num_fg)} 3 {fg(in_txt_fg)}server {RESET}"
+    
+    # Right side
+    div = f"{bg(bg_bar)}{fg(c.get('fg_dim', c.get('fg_muted')))}│{RESET}"
+    right_parts = []
+    for color, text in t["right_items"]:
+        right_parts.append(f" {bg(bg_bar)}{fg(color)}{text}{RESET}")
+    right_str = div.join(right_parts) + " "
+
+    left_side = f"{session_pill}{bg(bg_bar)} {tab1}{tab2}{tab3} {RESET}"
+    return left_side, right_str, bg_bar
+
+def print_theme_card(theme_id, index=None):
+    t = THEMES[theme_id]
+    c = t["colors"]
+    idx_str = f"[{index}] " if index is not None else ""
+    
+    print(f"\n{BOLD}{idx_str}{t['title']}{RESET}")
+    print(f"  {DIM}{t['vibes']} — {t['description']}{RESET}")
+    
+    swatches = []
+    for name, hex_val in list(c.items())[:8]:
+        swatches.append(f"{bg(hex_val)}  {RESET} {fg(hex_val)}{hex_val}{RESET} {DIM}{name}{RESET}")
+    print("  Palette: " + "  ".join(swatches[:4]))
+    if len(swatches) > 4:
+        print("           " + "  ".join(swatches[4:]))
+    
+    print(f"  {DIM}Normal Status Bar:{RESET}")
+    left, right, bg_bar = render_statusbar(theme_id, prefix_active=False)
+    print(f"    {left}  {right}")
+    
+    print(f"  {DIM}Prefix Active (C-a pressed):{RESET}")
+    left_p, right_p, _ = render_statusbar(theme_id, prefix_active=True)
+    print(f"    {left_p}  {right}")
+    
+    b_act = t["border_active"]
+    b_inact = t["border_inactive"]
+    print(f"  {DIM}Borders:{RESET} Active: {fg(b_act)}━━━━━ {b_act}{RESET}  Inactive: {fg(b_inact)}───── {b_inact}{RESET}")
+
+def apply_theme(theme_name):
+    # Support aliases
+    if theme_name == "kanagawa-dragon":
+        theme_name = "dragon"
+        
+    if theme_name not in THEMES:
+        print(f"Error: Unknown theme '{theme_name}'. Available: {', '.join(THEMES.keys())}")
+        return False
+    
+    script_path = os.path.expanduser(f"~/.tmux/themes/{THEMES[theme_name]['file']}")
+    dotfiles_script = os.path.expanduser(f"~/dotfiles/tmux/themes/{THEMES[theme_name]['file']}")
+    target = script_path if os.path.isfile(script_path) else dotfiles_script
+    
+    if not os.path.isfile(target):
+        print(f"Error: Theme script not found at {target}")
+        return False
+    
+    try:
+        subprocess.run(["bash", target], check=True)
+        print(f"\n{BOLD}✓ Applied '{THEMES[theme_name]['title']}' to your running tmux session!{RESET}")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to apply theme: {e}")
+        return False
+
+def set_default_theme(theme_name):
+    if theme_name == "kanagawa-dragon":
+        theme_name = "dragon"
+        
+    if not apply_theme(theme_name):
+        return
+    
+    tmux_conf = os.path.expanduser("~/dotfiles/tmux/tmux.conf")
+    if not os.path.isfile(tmux_conf):
+        print(f"Error: tmux.conf not found at {tmux_conf}")
+        return
+    
+    theme_file = THEMES[theme_name]['file']
+    new_line = f'run-shell "[ -f ~/.tmux/themes/{theme_file} ] && ~/.tmux/themes/{theme_file} || true"\n'
+    
+    with open(tmux_conf, 'r') as f:
+        content = f.read()
+    
+    pattern = r'run-shell "\[ -f ~/.tmux/themes/theme-[^.]+\.sh \].*"'
+    if re.search(pattern, content):
+        new_content = re.sub(pattern, f'run-shell "[ -f ~/.tmux/themes/{theme_file} ] && ~/.tmux/themes/{theme_file} || true"', content)
+    else:
+        new_content = content + f"\n{new_line}"
+        
+    with open(tmux_conf, 'w') as f:
+        f.write(new_content)
+    
+    print(f"{BOLD}✓ Saved '{theme_file}' as default theme in {tmux_conf}!{RESET}")
+
+def interactive_menu():
+    print(f"\n{BOLD}======================================================{RESET}")
+    print(f"{BOLD}           TMUX THEME GALLERY & LIVE SWITCHER         {RESET}")
+    print(f"{BOLD}======================================================{RESET}")
+    
+    theme_keys = list(THEMES.keys())
+    for idx, key in enumerate(theme_keys, 1):
+        print_theme_card(key, index=idx)
+    
+    print(f"\n{BOLD}------------------------------------------------------{RESET}")
+    print(f"Quick Commands:")
+    print(f"  [1-{len(theme_keys)}] Apply theme live to running tmux session")
+    print(f"  [s1-s{len(theme_keys)}] Apply AND save as permanent default in tmux.conf")
+    print(f"  [q] Quit")
+    
+    try:
+        choice = input(f"\n{BOLD}Select an option (e.g. 1 or s1): {RESET}").strip().lower()
+        if choice == 'q' or not choice:
+            print("Exiting.")
+            return
+        
+        if choice.startswith('s') and choice[1:].isdigit():
+            idx = int(choice[1:]) - 1
+            if 0 <= idx < len(theme_keys):
+                set_default_theme(theme_keys[idx])
+        elif choice.isdigit():
+            idx = int(choice) - 1
+            if 0 <= idx < len(theme_keys):
+                apply_theme(theme_keys[idx])
+                print(f"{DIM}Tip: Enter 's{choice}' next time to make it your permanent startup theme.{RESET}")
+    except (KeyboardInterrupt, EOFError):
+        print("\nExited.")
+
+def main():
+    parser = argparse.ArgumentParser(description="Preview and switch tmux themes")
+    parser.add_argument("--all", "-a", action="store_true", help="Display all theme visual mockups")
+    parser.add_argument("--apply", metavar="NAME", help="Apply a theme live to the running tmux server")
+    parser.add_argument("--set-default", metavar="NAME", help="Apply theme and set as permanent default in tmux.conf")
+    parser.add_argument("--list", "-l", action="store_true", help="List available theme names")
+    
+    args = parser.parse_args()
+    
+    if args.list:
+        for k, v in THEMES.items():
+            print(f"- {k:10} : {v['title']}")
+        return
+
+    if args.apply:
+        apply_theme(args.apply)
+        return
+        
+    if args.set_default:
+        set_default_theme(args.set_default)
+        return
+        
+    if args.all:
+        for key in THEMES:
+            print_theme_card(key)
+        return
+
+    interactive_menu()
+
+if __name__ == "__main__":
+    main()
