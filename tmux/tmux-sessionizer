@@ -61,6 +61,7 @@ session_idx=""
 session_cmd=""
 user_selected=""
 split_type=""
+fzf_key=""
 VERSION="0.1.0"
 
 while [[ "$#" -gt 0 ]]; do
@@ -318,7 +319,13 @@ if [[ ! -z $session_cmd ]]; then
 elif [[ ! -z $user_selected ]]; then
     selected="$user_selected"
 else
-    selected=$(find_dirs | fzf)
+    # alt-enter is the alternate accept: flip the picked session onto this
+    # client (swap with whoever has it open) instead of a plain switch.
+    # ctrl-enter is not used for this since most terminals send it as the
+    # same byte as plain enter, so fzf can't reliably tell them apart.
+    fzf_result=$(find_dirs | fzf --expect=alt-enter)
+    fzf_key=$(head -n1 <<<"$fzf_result")
+    selected=$(tail -n +2 <<<"$fzf_result")
 fi
 
 if [[ -z $selected ]]; then
@@ -339,6 +346,12 @@ fi
 if ! has_session "$selected_name"; then
     tmux new-session -ds "$selected_name" -c "$selected"
     hydrate "$selected_name" "$selected"
+fi
+
+if [[ "$fzf_key" == "alt-enter" ]]; then
+    # Session already exists by this point (created above if needed);
+    # tmux-session-swap's own has-session check becomes a no-op.
+    exec ~/dotfiles/bin/tmux-session-swap "$selected_name" "$selected"
 fi
 
 switch_to "$selected_name"
