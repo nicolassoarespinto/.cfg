@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+# tmux-pane-join
+# Fuzzy-pick any pane from any session and join it into the current window as a split.
+# Uses join-pane so the process is never killed — just moved.
+#
+# Usage: tmux-pane-join [-v]   (-v = horizontal split stacked top/bottom; default = side-by-side)
+
+set -euo pipefail
+
+SPLIT_FLAG="-h"  # default: vertical split (side-by-side)
+[[ "${1:-}" == "-v" ]] && SPLIT_FLAG="-v"
+
+CURRENT_PANE=$(tmux display-message -p "#{pane_id}")
+CURRENT_WIN=$(tmux display-message -p "#{window_id}")
+
+# Build list of all panes except the current one
+# Format: SESSION  WINDOW  CMD  PATH  PANE_ID (tab-separated for fzf)
+PANE_LIST=$(tmux list-panes -a \
+  -F "#{session_name}\t#{window_name}\t#{pane_current_command}\t#{b:pane_current_path}\t#{pane_id}" \
+  2>/dev/null | grep -v "$(printf '\t')${CURRENT_PANE}$" || true)
+
+if [[ -z "$PANE_LIST" ]]; then
+  echo "No other panes available." >&2
+  exit 0
+fi
+
+# Let user pick with fzf; columns: session | window | cmd | path
+SELECTED=$(echo "$PANE_LIST" | fzf \
+  --height=100% \
+  --border \
+  --delimiter=$'\t' \
+  --with-nth=1,2,3,4 \
+  --header="Join pane as split (process stays alive) | Enter: join | Esc: cancel" \
+  --prompt="Pane> " \
+  --preview='
+    PANE_ID=$(echo {} | cut -f5)
+    tmux capture-pane -pt "$PANE_ID" -e 2>/dev/null || echo "(no preview available)"
+  ' \
+  --preview-window=right:55%:wrap \
+  --bind="j:down,k:up,q:cancel" \
+  --layout=reverse \
+  --ansi) || true
+
+[[ -z "$SELECTED" ]] && exit 0
+
+PANE_ID=$(echo "$SELECTED" | cut -f5)
+
+# Join the picked pane into the current window as a split
+tmux join-pane -s "$PANE_ID" "$SPLIT_FLAG"

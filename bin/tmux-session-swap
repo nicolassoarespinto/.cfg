@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Generic version of what was tmux-herdr-swap: flips <session> onto the
+# current client, swapping with whichever other client already has that
+# session open (so a side monitor showing e.g. "herdr" trades places with
+# whatever the main screen had), and reflips back on a second call from
+# the same client. Used for dedicated keybindings (C-a H for herdr, C-a R
+# for repl) and from tmux-sessionizer's alt-enter alternate action, so any
+# session picked from the C-a f picker can flip instead of just switching.
+#
+# Usage: tmux-session-swap <session> [dir]
+#
+# Requires TMUX_CALLING_CLIENT in the environment, set by the caller from
+# #{client_name} *at tmux dispatch time* (see tmux.conf/tmux-sessionizer).
+# A fresh `tmux display-message -p '#{client_name}'` call made from
+# *inside* this already-spawned script has no attachment to the keypress
+# that triggered it — it resolves to tmux's ambient "current client"
+# instead (in practice: whichever client was most recently active
+# server-wide), which silently flips the wrong client. Falling back to
+# that query only when the env var is unset, for manual/interactive
+# testing from a shell.
+
+set -euo pipefail
+
+SESSION="${1:?usage: tmux-session-swap <session> [dir]}"
+SESSION_DIR="${2:-$HOME}"
+CACHE_DIR="$HOME/.cache/tmux-session-swap"
+
+this_client="${TMUX_CALLING_CLIENT:-$(tmux display-message -p '#{client_name}')}"
+this_session=$(tmux display-message -p -t "$this_client" '#{session_name}')
+mkdir -p "$CACHE_DIR"
+# client_name is the client's tty path (e.g. /dev/pts/65); sanitize before
+# using it as a filename. Keyed by session too, since one client can now
+# flip to more than one kind of session (herdr, repl, anything picked
+# from tmux-sessionizer).
+cache_file="$CACHE_DIR/${this_client//\//_}__${SESSION}"
+
+# The cache remembers the *specific* partner client swapped with, not just
+# a session name — reconstructing "who's on session X" later by name is
+# ambiguous the moment more than one client shares that session (this
+# broke a reflip in practice: another, unrelated client happened to also
+# be on the target session, and got swapped by mistake instead of the
+# actual partner).
+if [[ "$this_session" == "$SESSION" ]]; then
+    if [[ -f "$cache_file" ]]; then
+        mapfile -t cache_lines <"$cache_file"
+        target="${cache_lines[0]}"
+        partner_client="${cache_lines[1]:-}"
+        rm -f "$cache_file"
+        # Partner may have moved on to something else since the flip;
+        # only swap it back if it's still attached at all.
+        if [[ -n "$partner_client" ]] && ! tmux list-clients -F '#{client_name}' 2>/dev/null | grep -qFx "$partner_client"; then
+            partner_client=""
+        fi
+    else
+        # Already on the target with nothing recorded to reflip to; no-op.
+        exit 0
+    fi
+else
+    target="$SESSION"
+    tmux has-session -t "$SESSION" 2>/dev/null || tmux new-session -ds "$SESSION" -c "$SESSION_DIR"
+    partner_client=$(tmux list-clients -t "$target" -F '#{client_name}' 2>/dev/null | grep -vFx "$this_client" | head -1 || true)
+fi
+
+if [[ -n "$partner_client" ]]; then
+    tmux switch-client -c "$partner_client" -t "$this_session"
+fi
+
+tmux switch-client -c "$this_client" -t "$target"
+
+if [[ "$target" == "$SESSION" ]]; then
+    {
+        echo "$this_session"
+        echo "$partner_client"
+    } >"$cache_file"
+fi
+
+exit 0
