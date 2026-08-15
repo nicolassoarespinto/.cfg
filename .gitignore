@@ -1,1 +1,3 @@
 nvim/debug/*
+__pycache__
+*.csv
