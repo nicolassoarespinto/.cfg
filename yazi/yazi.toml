@@ -1,0 +1,118 @@
+#:schema https://yazi-rs.github.io/schemas/yazi.json
+# A TOML linter such as https://taplo.tamasfe.dev/ can use the schema above to validate this config.
+# If you encounter any issues, please make an issue at https://github.com/yazi-rs/schemas.
+
+[mgr]
+ratio          = [ 4, 11, 9 ]
+sort_by        = "extension"
+sort_sensitive = false
+sort_reverse 	 = false
+sort_dir_first = true
+sort_translit  = false
+linemode       = "none"
+show_hidden    = true
+show_symlink   = true
+scrolloff      = 0
+mouse_events   = [ "click", "scroll" ]
+title_format   = "Yazi: {cwd}"
+
+[preview]
+wrap            = "no"
+tab_size        = 2
+max_width       = 760
+max_height      = 830
+cache_dir       = ""
+image_delay     = 30
+image_filter    = "triangle"
+image_quality   = 75
+sixel_fraction  = 15
+ueberzug_scale  = 1
+ueberzug_offset = [ 0, 0, 0, 0 ]
+preload         = false
+
+[[preview.rules]]
+glob = ["/mnt/**"]
+run = "noop"
+
+[plugin]
+prepend_fetchers = [
+  { id = "git", url = "*",  run = "git", group = "git" },
+  { id = "git", url = "*/", run = "git", group = "git" },
+]
+
+prepend_previewers = [
+  # { name = "*.csv", run = "duckdb" },
+  # { name = "*.tsv", run = "duckdb" },
+  # { name = "*.parquet", run = "duckdb" },
+  # { name = "*.xlsx", run = "duckdb" },
+  # { name = "*.db", run = "duckdb" },
+  # { name = "*.duckdb", run = "duckdb" }
+]
+
+prepend_preloaders = [
+  # { name = "*.csv", run = "duckdb", multi = false },
+  # { name = "*.tsv", run = "duckdb", multi = false },
+  # { name = "*.parquet", run = "duckdb", multi = false },
+  # { name = "*.xlsx", run = "duckdb", multi = false }
+]
+
+[opener]
+folder = [
+	{ run = 'nvim "$@"', desc = "nvim", block = true },
+]
+edit = [
+	{ run = 'nvim "$@"', desc = "nvim", block = true },
+]
+open = [
+	{ run = 'nvim "$@"', desc = "nvim", block = true },
+]
+extract = [
+	{ run = 'tar -xvf "$1"', desc = "Extract (tar)" },
+	{ run = 'unzip "$1"', desc = "Extract (unzip)" },
+]
+play = [
+	{ run = 'mpv --vo=tct "$1"', orphan = true, desc = "mpv (terminal)" },
+	{ run = 'ffplay -nodisp -autoexit "$1"', orphan = true, desc = "ffplay (audio)" },
+]
+pdf = [
+	{ run = 'wslview "$1"', desc = "Open in Windows default (wslview)" },
+]
+
+[open]
+rules = [
+	{ url = "*/", use = [ "folder" ] },
+
+	{ mime = "text/*",  use = [ "edit" ] },
+	{ mime = "image/*", use = [ "edit" ] },
+	{ mime = "video/*", use = [ "play", "edit" ] },
+	{ mime = "audio/*", use = [ "play" ] },
+	{ mime = "inode/x-empty", use = [ "edit" ] },
+
+	{ mime = "application/pdf", use = [ "pdf" ] },
+	{ mime = "application/json", use = [ "edit" ] },
+	{ mime = "*/javascript",     use = [ "edit" ] },
+
+	{ mime = "application/zip",             use = [ "extract" ] },
+	{ mime = "application/gzip",            use = [ "extract" ] },
+	{ mime = "application/x-tar",           use = [ "extract" ] },
+	{ mime = "application/x-bzip",          use = [ "extract" ] },
+	{ mime = "application/x-bzip2",         use = [ "extract" ] },
+	{ mime = "application/x-7z-compressed", use = [ "extract" ] },
+	{ mime = "application/x-rar",           use = [ "extract" ] },
+	{ mime = "application/xz",              use = [ "extract" ] },
+
+	{ mime = "*", use = [ "edit" ] },
+]
+
+[tasks]
+micro_workers    = 10
+macro_workers    = 25
+bizarre_retry    = 5
+image_alloc      = 536870912  # 512MB
+image_bound      = [ 0, 0 ]
+suppress_preload = false
+
+[log]
+enabled = true
+
+

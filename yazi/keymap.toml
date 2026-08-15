@@ -1,0 +1,19 @@
+#:schema https://yazi-rs.github.io/schemas/keymap.json
+
+# Extends (not replaces) yazi's built-in keymap. Defaults already cover most
+# of what you'd want day to day:
+#   g<Space>  cd --interactive   (fuzzy jump to any typed path, tab-completes)
+#   g h/c/d   cd to ~, ~/.config, ~/Downloads
+#   s / S     search --via=fd / --via=rg
+#   c c/f/d   copy path / filename / dirpath
+#   y/x/p     yank / cut / paste
+#   ; / :     shell --interactive / --block --interactive
+# The additions below just extend the `g` jump table to your actual daily
+# directories, matching the existing g h/c/d pattern.
+
+[mgr]
+prepend_keymap = [
+  { on = [ "g", "p" ], run = "cd ~/projects",  desc = "Go to ~/projects" },
+  { on = [ "g", "w" ], run = "cd ~/dotfiles",  desc = "Go to ~/dotfiles" },
+  { on = [ "g", "b" ], run = "cd ~/beads",     desc = "Go to ~/beads" },
+]

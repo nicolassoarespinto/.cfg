@@ -1,0 +1,39 @@
+[[plugin.deps]]
+use = "yazi-rs/plugins:git"
+rev = "3f2b882"
+hash = "ba630b4952b9df9cce4e7382b4b24c81"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:full-border"
+rev = "3f2b882"
+hash = "7b625412411be411153886894d9acaf"
+
+[[flavor.deps]]
+use = "yazi-rs/flavors:catppuccin-mocha"
+rev = "be0b21d"
+hash = "ce320f877fe709b189433941aba747c4"
+
+[[flavor.deps]]
+use = "yazi-rs/flavors:catppuccin-macchiato"
+rev = "be0b21d"
+hash = "5b1bf96d1cba26376087c37de993c517"
+
+[[flavor.deps]]
+use = "yazi-rs/flavors:catppuccin-frappe"
+rev = "be0b21d"
+hash = "ab7c71d442d3a9e16331ea0d95ab36a8"
+
+[[flavor.deps]]
+use = "yazi-rs/flavors:catppuccin-latte"
+rev = "be0b21d"
+hash = "273ee53369ccfbf7feb9b0c65e387ed8"
+
+[[flavor.deps]]
+use = "yazi-rs/flavors:dracula"
+rev = "be0b21d"
+hash = "40136c9a02e166067a36d9ad618887f2"
+
+[[flavor.deps]]
+use = "dangooddd/kanagawa"
+rev = "04985d1"
+hash = "c69a63981e254a3a06a11c2bf0e6af1d"
